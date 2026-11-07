@@ -1,0 +1,16 @@
+export type AppSection =
+  | "overview"
+  | "daily"
+  | "calendar"
+  | "transactions"
+  | "income"
+  | "expenses"
+  | "budgets"
+  | "inventory"
+  | "savings"
+  | "investments"
+  | "assets"
+  | "reports"
+  | "assistant"
+  | "settings"
+  | "admin";
