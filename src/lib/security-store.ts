@@ -724,6 +724,13 @@ export async function storeOtpChallenge(
   otpHash: string,
   expiresAt: Date,
 ): Promise<void> {
+  // Invalidate previous challenges in memory
+  for (const challenge of memoryOtpChallenges) {
+    if (challenge.userId === userId) {
+      challenge.isUsed = true;
+    }
+  }
+
   const supabase = getSupabaseServerClient();
   if (supabase) {
     try {
@@ -746,13 +753,6 @@ export async function storeOtpChallenge(
       return;
     } catch {
       // Fallback
-    }
-  }
-
-  // Invalidate previous challenges
-  for (const challenge of memoryOtpChallenges) {
-    if (challenge.userId === userId) {
-      challenge.isUsed = true;
     }
   }
 
@@ -788,14 +788,17 @@ export async function getActiveOtpChallenge(
         .limit(1)
         .maybeSingle();
 
-      if (!error && data) {
-        return {
-          id: data.id,
-          otpHash: data.otp_hash,
-          attempts: data.attempts,
-          maxAttempts: data.max_attempts,
-          expiresAt: new Date(data.expires_at),
-        };
+      if (!error) {
+        if (data) {
+          return {
+            id: data.id,
+            otpHash: data.otp_hash,
+            attempts: data.attempts,
+            maxAttempts: data.max_attempts,
+            expiresAt: new Date(data.expires_at),
+          };
+        }
+        return null;
       }
     } catch {
       // Fallback
