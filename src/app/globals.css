@@ -1907,229 +1907,182 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 }
 
 /* ==========================================================================
-   FUTURISTIC INACTIVITY WARNING MODAL
+   SLEEK TOP FLOATING SESSION INACTIVITY BANNER
    ========================================================================== */
-.session-idle-overlay {
+.session-top-banner {
   position: fixed;
-  inset: 0;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 99999;
-  display: grid;
-  place-items: center;
-  padding: 16px;
-  background: rgba(10, 15, 30, 0.78);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  animation: idleFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-@keyframes idleFadeIn {
-  from { opacity: 0; backdrop-filter: blur(0px); }
-  to { opacity: 1; backdrop-filter: blur(8px); }
-}
-
-.session-idle-card {
-  width: 100%;
-  max-width: 440px;
-  background: #ffffff;
-  border-radius: 20px;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.3), 0 0 0 1px rgba(15, 23, 42, 0.05);
-  overflow: hidden;
-  animation: idleCardPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  display: flex;
-  flex-direction: column;
-}
-.session-idle-card.urgent {
-  border-color: rgba(239, 68, 68, 0.4);
-  box-shadow: 0 25px 60px -15px rgba(239, 68, 68, 0.35), 0 0 0 2px rgba(239, 68, 68, 0.15);
-}
-
-@keyframes idleCardPop {
-  0% { opacity: 0; transform: scale(0.9) translateY(12px); }
-  100% { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-.session-idle-header {
-  padding: 16px 22px 14px;
+  width: min(calc(100% - 32px), 620px);
+  background: #0f172a;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  padding: 8px 12px 8px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #f1f5f9;
-  background: #fafcff;
+  gap: 16px;
+  box-shadow: 0 12px 35px -5px rgba(15, 23, 42, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: bannerSlideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.session-idle-header.urgent {
-  background: #fff5f5;
-  border-bottom-color: #fee2e2;
+@keyframes bannerSlideDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -24px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
 }
 
-.idle-badge {
+.session-top-banner.urgent {
+  background: #180d12;
+  border-color: rgba(239, 68, 68, 0.5);
+  box-shadow: 0 14px 40px -5px rgba(239, 68, 68, 0.35), 0 0 0 1px rgba(239, 68, 68, 0.2);
+}
+
+.banner-left-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.banner-pulse-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 10px #10b981;
+  flex: 0 0 9px;
+  animation: cyberPulse 1.6s infinite;
+}
+.banner-pulse-dot.urgent {
+  background: #ef4444;
+  box-shadow: 0 0 10px #ef4444;
+}
+
+.banner-timer-badge {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  padding: 4px 10px;
+  gap: 5px;
+  padding: 3px 9px;
   border-radius: 999px;
-  background: rgba(37, 99, 235, 0.1);
-  color: #2563eb;
-}
-.idle-badge.urgent {
-  background: rgba(239, 68, 68, 0.12);
-  color: #dc2626;
-}
-.idle-badge-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: currentColor;
-  box-shadow: 0 0 6px currentColor;
-  animation: cyberPulse 1.4s infinite;
-}
-
-.session-idle-body {
-  padding: 22px 24px 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.idle-timer-ring-wrap {
-  position: relative;
-  width: 124px;
-  height: 124px;
-  margin: 2px 0 16px;
-  display: grid;
-  place-items: center;
-}
-.idle-timer-svg {
-  position: absolute;
-  inset: 0;
-  transform: rotate(-90deg);
-}
-.idle-timer-bg-circle {
-  stroke: #e2e8f0;
-  stroke-width: 6;
-  fill: transparent;
-}
-.idle-timer-progress-circle {
-  stroke-width: 6;
-  stroke-linecap: round;
-  fill: transparent;
-  transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
-}
-
-.idle-timer-center {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.idle-timer-sec {
-  font-size: 30px;
-  font-weight: 800;
+  background: rgba(255, 255, 255, 0.1);
+  color: #38bdf8;
+  font-size: 12px;
+  font-weight: 700;
   font-family: var(--font-mono, monospace);
-  line-height: 1;
-  letter-spacing: -1px;
-  color: #0f172a;
+  letter-spacing: 0.3px;
+  flex: 0 0 auto;
 }
-.idle-timer-sec.urgent {
-  color: #dc2626;
+.banner-timer-badge.urgent {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
   animation: timerBeat 1s infinite;
 }
-@keyframes timerBeat {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.08); }
-}
 
-.idle-timer-label {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: #94a3b8;
-  margin-top: 4px;
-}
-
-.idle-title {
-  font-size: 19px;
-  font-weight: 800;
-  color: #0f172a;
-  margin: 0 0 6px 0;
-  letter-spacing: -0.3px;
-}
-.idle-desc {
-  font-size: 13px;
-  line-height: 1.5;
-  color: #64748b;
-  margin: 0 0 20px 0;
-  max-width: 380px;
-}
-.idle-desc strong {
-  color: #1e293b;
-}
-
-.idle-actions-col {
-  width: 100%;
+.banner-text {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  min-width: 0;
+}
+.banner-text strong {
+  font-size: 12px;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.banner-subtext {
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.idle-btn-stay {
-  width: 100%;
+.banner-actions {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
-  padding: 13px 20px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  flex: 0 0 auto;
+}
+
+.banner-stay-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 15px;
+  border-radius: 999px;
+  background: #2563eb;
   color: #ffffff;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
   transition: all 0.15s ease;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
 }
-.idle-btn-stay:hover {
-  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+.banner-stay-btn:hover {
+  background: #1d4ed8;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.45);
 }
-.idle-btn-stay.urgent {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+.banner-stay-btn.urgent {
+  background: #dc2626;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
 }
-.idle-btn-stay.urgent:hover {
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+.banner-stay-btn.urgent:hover {
+  background: #b91c1c;
 }
 
-.idle-btn-logout {
-  width: 100%;
-  display: flex;
+.banner-logout-btn {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px 16px;
-  border-radius: 10px;
+  gap: 5px;
+  padding: 7px 12px;
+  border-radius: 999px;
   background: transparent;
-  color: #64748b;
-  font-size: 12px;
+  color: #94a3b8;
+  font-size: 11px;
   font-weight: 600;
-  border: 1px solid #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   cursor: pointer;
   transition: all 0.15s ease;
+  white-space: nowrap;
 }
-.idle-btn-logout:hover {
-  background: #f8fafc;
-  color: #dc2626;
-  border-color: #fecaca;
+.banner-logout-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
 }
+
+@media (max-width: 640px) {
+  .session-top-banner {
+    border-radius: 16px;
+    padding: 10px 14px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .banner-actions {
+    justify-content: flex-end;
+  }
+}
+
 
 
 
