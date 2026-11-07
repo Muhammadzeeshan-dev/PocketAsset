@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 
-const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes = 300,000 ms
-const WARNING_COUNTDOWN_SEC = 60; // 60 seconds countdown
-const TOTAL_EXPIRY_MS = INACTIVITY_TIMEOUT_MS + WARNING_COUNTDOWN_SEC * 1000; // 360,000 ms
+const INACTIVITY_TIMEOUT_MS = 10 * 1000; // 10 seconds idle before warning modal triggers
+const WARNING_COUNTDOWN_SEC = 60; // 60 seconds (1 minute) countdown
+const TOTAL_EXPIRY_MS = INACTIVITY_TIMEOUT_MS + WARNING_COUNTDOWN_SEC * 1000; // 70,000 ms (10s + 60s)
 
 const STORAGE_KEY_LAST_ACTIVE = "pocketasset_last_active";
 const STORAGE_KEY_LOGOUT = "pocketasset_session_logout";
@@ -63,6 +63,7 @@ export function useInactivityTimer({
 
   // Handle Extend Session
   const extendSession = useCallback(async () => {
+    warningOpenRef.current = false;
     if (!sessionId) {
       const now = Date.now();
       lastActiveRef.current = now;
@@ -216,7 +217,7 @@ export function useInactivityTimer({
       }, 0);
     }
 
-    // Genuine user interaction listener (throttled to at most once per 1500ms)
+    // Genuine user interaction listener (throttled to at most once per 400ms)
     const handleUserInteraction = () => {
       // CRITICAL: Do NOT silently dismiss warning if modal is already open
       if (warningOpenRef.current) {
@@ -224,7 +225,7 @@ export function useInactivityTimer({
       }
 
       const currentTime = Date.now();
-      if (currentTime - lastThrottleRef.current < 1500) {
+      if (currentTime - lastThrottleRef.current < 400) {
         return;
       }
       lastThrottleRef.current = currentTime;
@@ -247,6 +248,7 @@ export function useInactivityTimer({
       "scroll",
       "touchstart",
       "pointerdown",
+      "click",
     ] as const;
 
     trackedEvents.forEach((evt) => {

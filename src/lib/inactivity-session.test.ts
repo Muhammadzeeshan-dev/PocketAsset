@@ -97,6 +97,35 @@ describe("PocketAsset Session Inactivity & Persistence Management", () => {
     expect(isAuthorizedAdminEmail("attacker@evil.com")).toBe(false);
   });
 
+  it("calculates 10-second inactivity and 60-second warning countdown boundaries accurately", () => {
+    const INACTIVITY_TIMEOUT_MS = 10 * 1000; // 10,000 ms = 10 seconds
+    const COUNTDOWN_SEC = 60; // 60 seconds (1 minute)
+    const TOTAL_EXPIRY_MS = INACTIVITY_TIMEOUT_MS + COUNTDOWN_SEC * 1000; // 70,000 ms
+
+    expect(INACTIVITY_TIMEOUT_MS).toBe(10000);
+    expect(TOTAL_EXPIRY_MS).toBe(70000);
+
+    // Scenario A: User active 5 seconds ago -> No warning popup yet
+    const activeElapsed = 5 * 1000;
+    expect(activeElapsed < INACTIVITY_TIMEOUT_MS).toBe(true);
+
+    // Scenario B: User inactive for 10 seconds -> Warning modal triggered with 60s remaining
+    const warningTriggerElapsed = 10 * 1000;
+    expect(warningTriggerElapsed >= INACTIVITY_TIMEOUT_MS).toBe(true);
+    const initialSecondsRemaining = Math.ceil((TOTAL_EXPIRY_MS - warningTriggerElapsed) / 1000);
+    expect(initialSecondsRemaining).toBe(60);
+
+    // Scenario C: User inactive for 40 seconds (30s after popup) -> 30s remaining
+    const midWarningElapsed = 40 * 1000;
+    expect(midWarningElapsed < TOTAL_EXPIRY_MS).toBe(true);
+    const midSecondsRemaining = Math.ceil((TOTAL_EXPIRY_MS - midWarningElapsed) / 1000);
+    expect(midSecondsRemaining).toBe(30);
+
+    // Scenario D: User inactive for > 70 seconds (10s idle + 60s popup elapsed) -> Auto-logout triggered
+    const expiredElapsed = 71 * 1000;
+    expect(expiredElapsed >= TOTAL_EXPIRY_MS).toBe(true);
+  });
+
   it("calculates 5-minute inactivity and 60-second warning countdown boundaries accurately", () => {
     const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000; // 300,000 ms
     const COUNTDOWN_SEC = 60;
