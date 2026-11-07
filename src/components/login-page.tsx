@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { AlertCircle, CheckCircle2, Eye, EyeOff, LockKeyhole, ShieldCheck, WalletCards } from "lucide-react";
 
@@ -20,6 +20,15 @@ export function LoginPage({ supabase, onAuthenticated, onTryDemo, logoutNotice }
   const [error, setError] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("action") === "forgot-password") {
+        setForgotPasswordOpen(true);
+      }
+    }
+  }, []);
 
   async function handleLogin(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -112,8 +121,9 @@ export function LoginPage({ supabase, onAuthenticated, onTryDemo, logoutNotice }
           return;
         }
 
-        // Strict Password Restriction: Only allow the designated owner master password
-        const REQUIRED_OWNER_PASSWORD = process.env.NEXT_PUBLIC_OWNER_PASSWORD || "Zeeshan@PocketAsset2026";
+        // Strict Password Restriction: Only allow the designated owner master password or updated password
+        const customPassword = typeof window !== "undefined" ? localStorage.getItem("pocketasset_custom_password") : null;
+        const REQUIRED_OWNER_PASSWORD = customPassword || process.env.NEXT_PUBLIC_OWNER_PASSWORD || "Zeeshan@PocketAsset2026";
         if (password !== REQUIRED_OWNER_PASSWORD) {
           await fetch("/api/auth/login-audit", {
             method: "POST",
@@ -174,7 +184,7 @@ export function LoginPage({ supabase, onAuthenticated, onTryDemo, logoutNotice }
     try {
       if (supabase) {
         const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-          redirectTo: `${window.location.origin}/settings`,
+          redirectTo: `${window.location.origin}/reset-password`,
         });
         if (resetError) throw resetError;
       }

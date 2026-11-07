@@ -75,6 +75,9 @@ export function createDemoSupabaseClient(): SupabaseClient {
       signInWithPassword: () => Promise.resolve({ data: { user: null }, error: null }),
       signUp: () => Promise.resolve({ data: { user: null }, error: null }),
       signOut: () => Promise.resolve({ error: null }),
+      updateUser: () => Promise.resolve({ data: { user: null }, error: null }),
+      resetPasswordForEmail: () => Promise.resolve({ data: {}, error: null }),
+      exchangeCodeForSession: () => Promise.resolve({ data: { session: null }, error: null }),
     },
   } as unknown as SupabaseClient;
 }
