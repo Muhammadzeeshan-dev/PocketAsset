@@ -178,6 +178,21 @@ export function EditAccountDialog({
             return;
           }
         }
+
+        // If Supabase insert failed (e.g. offline, intermittent network, or standalone mode), fallback safely to local queue
+        if (queuedLocally) {
+          onUpdated(`Saved offline on device. ${account.name} balance adjusted to ${formatPkr(parsedActualPaisa)}.`);
+          return;
+        }
+
+        try {
+          await queueOfflineTransaction(userId, transaction);
+          onUpdated(`Saved offline on device. ${account.name} balance adjusted to ${formatPkr(parsedActualPaisa)}.`);
+          return;
+        } catch {
+          // If both failed, display detailed message
+        }
+
         const errMsg = insertError.message || (insertError as any).details || (insertError as any).hint || "Failed to record balance adjustment.";
         throw new Error(errMsg);
       }

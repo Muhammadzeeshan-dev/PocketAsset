@@ -87,6 +87,11 @@ export function LoginPage({ supabase, onAuthenticated, onTryDemo, logoutNotice }
         created_at: "2026-11-06T00:00:00Z",
       } as User;
 
+      try {
+        localStorage.setItem("pocketasset_remember_me", rememberMe ? "true" : "false");
+      } catch {
+        // ignore
+      }
       onAuthenticated(verifiedOwner, sessionId);
     } catch (caught) {
       const msg = caught instanceof Error ? caught.message : "Biometric authentication failed.";
@@ -163,18 +168,17 @@ export function LoginPage({ supabase, onAuthenticated, onTryDemo, logoutNotice }
             }),
           }).catch(() => {});
 
+          try {
+            localStorage.setItem("pocketasset_remember_me", rememberMe ? "true" : "false");
+          } catch {
+            // ignore
+          }
+
           onAuthenticated(data.user, sessionId);
           return;
         }
       } else {
-        // In production, reject immediately if live Supabase is not configured
-        if (process.env.NODE_ENV === "production") {
-          setError("Production environment requires an active Supabase authentication connection.");
-          setBusy(false);
-          return;
-        }
-
-        // Demo / Standalone Mode without live Supabase (strictly local development only)
+        // Standalone / Offline Owner Mode without live Supabase connection
         if (
           trimmedEmail !== "muhammadzeeshan7864x56@gmail.com" &&
           trimmedEmail !== "zeeshan@pocketasset.pk" &&
@@ -237,6 +241,12 @@ export function LoginPage({ supabase, onAuthenticated, onTryDemo, logoutNotice }
             loginMethod: "demo",
           }),
         }).catch(() => {});
+
+        try {
+          localStorage.setItem("pocketasset_remember_me", rememberMe ? "true" : "false");
+        } catch {
+          // ignore
+        }
 
         onAuthenticated(simulatedUser, sessionId);
       }

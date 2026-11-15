@@ -2,9 +2,21 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 
-const INACTIVITY_TIMEOUT_MS = 20 * 1000; // 20 seconds idle before top banner triggers
-const WARNING_COUNTDOWN_SEC = 60; // 60 seconds (1 minute) countdown
-const TOTAL_EXPIRY_MS = INACTIVITY_TIMEOUT_MS + WARNING_COUNTDOWN_SEC * 1000; // 80,000 ms (20s + 60s)
+const DEFAULT_INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes idle before top banner triggers
+const REMEMBERED_INACTIVITY_TIMEOUT_MS = 24 * 60 * 60 * 1000; // 24 hours idle for remembered devices
+const WARNING_COUNTDOWN_SEC = 120; // 120 seconds (2 minutes) countdown
+const TOTAL_EXPIRY_MS = DEFAULT_INACTIVITY_TIMEOUT_MS + WARNING_COUNTDOWN_SEC * 1000; // 32 minutes total
+
+export function getInactivityConfig() {
+  const isRemembered =
+    typeof window !== "undefined" &&
+    window.localStorage?.getItem("pocketasset_remember_me") === "true";
+  const timeoutMs = isRemembered
+    ? REMEMBERED_INACTIVITY_TIMEOUT_MS
+    : DEFAULT_INACTIVITY_TIMEOUT_MS;
+  const totalMs = timeoutMs + WARNING_COUNTDOWN_SEC * 1000;
+  return { timeoutMs, totalMs, isRemembered };
+}
 
 const STORAGE_KEY_LAST_ACTIVE = "pocketasset_last_active";
 const STORAGE_KEY_LOGOUT = "pocketasset_session_logout";
@@ -198,9 +210,19 @@ export function useInactivityTimer({
     }
     lastActiveRef.current = initialLastActive;
 
+    const { timeoutMs, totalMs, isRemembered } = getInactivityConfig();
     const initialElapsed = now - initialLastActive;
-    if (initialElapsed >= TOTAL_EXPIRY_MS) {
-      // User was already inactive for > 6 minutes before refresh
+
+    // If device is remembered or user opted into persistent session, refresh activity and do not trigger auto-logout
+    if (isRemembered) {
+      lastActiveRef.current = now;
+      try {
+        localStorage.setItem(STORAGE_KEY_LAST_ACTIVE, String(now));
+      } catch {
+        // ignore
+      }
+    } else if (initialElapsed >= totalMs) {
+      // User was already inactive beyond full timeout + warning countdown
       setTimeout(() => {
         triggerLogout("inactivity");
       }, 0);
@@ -208,9 +230,9 @@ export function useInactivityTimer({
         window.removeEventListener("storage", handleStorageChange);
         channelRef.current?.close();
       };
-    } else if (initialElapsed >= INACTIVITY_TIMEOUT_MS) {
-      // User refreshed while in the 60s warning period
-      const remaining = Math.max(1, Math.ceil((TOTAL_EXPIRY_MS - initialElapsed) / 1000));
+    } else if (initialElapsed >= timeoutMs) {
+      // User refreshed while in the warning countdown period
+      const remaining = Math.max(1, Math.ceil((totalMs - initialElapsed) / 1000));
       setTimeout(() => {
         setSecondsRemaining(remaining);
         setIsWarningOpen(true);
@@ -260,12 +282,18 @@ export function useInactivityTimer({
 
     // Check timer loop every 1000ms
     const intervalId = setInterval(() => {
+      const { timeoutMs: currentTimeoutMs, totalMs: currentTotalMs, isRemembered: currentRemembered } = getInactivityConfig();
+      if (currentRemembered) {
+        // Remembered trusted personal device: bypass aggressive inactivity auto-logout
+        return;
+      }
+
       const current = Date.now();
       const elapsed = current - lastActiveRef.current;
 
       if (warningOpenRef.current) {
         // Warning modal is currently open, decrement countdown based on actual elapsed time
-        const remaining = Math.max(0, Math.ceil((TOTAL_EXPIRY_MS - elapsed) / 1000));
+        const remaining = Math.max(0, Math.ceil((currentTotalMs - elapsed) / 1000));
         setSecondsRemaining(remaining);
 
         if (remaining <= 0) {
@@ -274,8 +302,8 @@ export function useInactivityTimer({
         }
       } else {
         // Warning modal is not open yet
-        if (elapsed >= INACTIVITY_TIMEOUT_MS) {
-          const remaining = Math.max(0, Math.ceil((TOTAL_EXPIRY_MS - elapsed) / 1000));
+        if (elapsed >= currentTimeoutMs) {
+          const remaining = Math.max(0, Math.ceil((currentTotalMs - elapsed) / 1000));
           if (remaining <= 0) {
             clearInterval(intervalId);
             triggerLogout("inactivity");

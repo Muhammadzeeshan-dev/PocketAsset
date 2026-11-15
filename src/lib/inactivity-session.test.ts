@@ -59,9 +59,9 @@ describe("PocketAsset Session Inactivity & Persistence Management", () => {
     expect(isRevoked).toBe(true);
   });
 
-  it("authoritatively detects server-side inactivity when lastActiveAt exceeds 6 minutes", async () => {
+  it("authoritatively detects server-side inactivity when lastActiveAt exceeds 32 minutes", async () => {
     const timedOutSessionId = "sess-test-timed-out-server";
-    // Session whose server last_active_at was 7 minutes ago (420,000 ms > 360,000 ms limit)
+    // Session whose server last_active_at was 35 minutes ago (2,100,000 ms > 1,920,000 ms limit)
     await recordSession({
       id: "sess-rec-timed-out",
       sessionId: timedOutSessionId,
@@ -71,8 +71,8 @@ describe("PocketAsset Session Inactivity & Persistence Management", () => {
       browser: "Chrome",
       operatingSystem: "Windows 11",
       approxLocation: "Islamabad, Pakistan",
-      createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-      lastActiveAt: new Date(Date.now() - 7 * 60 * 1000).toISOString(),
+      createdAt: new Date(Date.now() - 40 * 60 * 1000).toISOString(),
+      lastActiveAt: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       isRevoked: false,
     });
@@ -147,6 +147,30 @@ describe("PocketAsset Session Inactivity & Persistence Management", () => {
 
     // Scenario C: User inactive for > 6 minutes (expired)
     const expiredElapsed = 361 * 1000;
+    expect(expiredElapsed >= TOTAL_EXPIRY_MS).toBe(true);
+  });
+
+  it("calculates 30-minute institutional inactivity and 120-second warning countdown boundaries accurately", () => {
+    const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000; // 1,800,000 ms = 30 minutes
+    const COUNTDOWN_SEC = 120; // 120 seconds (2 minutes)
+    const TOTAL_EXPIRY_MS = INACTIVITY_TIMEOUT_MS + COUNTDOWN_SEC * 1000; // 1,920,000 ms (32 minutes)
+
+    expect(INACTIVITY_TIMEOUT_MS).toBe(1800000);
+    expect(TOTAL_EXPIRY_MS).toBe(1920000);
+
+    // Scenario A: User active 15 minutes ago -> No warning popup yet
+    const activeElapsed = 15 * 60 * 1000;
+    expect(activeElapsed < INACTIVITY_TIMEOUT_MS).toBe(true);
+
+    // Scenario B: User inactive for 30 minutes 30 seconds -> Warning banner active with 90s remaining
+    const warningElapsed = (30 * 60 + 30) * 1000;
+    expect(warningElapsed >= INACTIVITY_TIMEOUT_MS).toBe(true);
+    expect(warningElapsed < TOTAL_EXPIRY_MS).toBe(true);
+    const secondsRemaining = Math.ceil((TOTAL_EXPIRY_MS - warningElapsed) / 1000);
+    expect(secondsRemaining).toBe(90);
+
+    // Scenario C: User inactive for > 32 minutes (expired)
+    const expiredElapsed = (32 * 60 + 1) * 1000;
     expect(expiredElapsed >= TOTAL_EXPIRY_MS).toBe(true);
   });
 

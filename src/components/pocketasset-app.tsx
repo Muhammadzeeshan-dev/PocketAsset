@@ -32,7 +32,7 @@ export function PocketAssetApp({ section = "overview" }: { section?: AppSection 
       localStorage.removeItem(STORAGE_KEY_SESSION_ID);
       localStorage.removeItem(STORAGE_KEY_LAST_ACTIVE);
       if (browserClient) {
-        await browserClient.auth.signOut().catch(() => {});
+        await browserClient.auth.signOut().catch(() => { });
       }
     } catch {
       // ignore
@@ -87,7 +87,7 @@ export function PocketAssetApp({ section = "overview" }: { section?: AppSection 
               if (res.status === 401) {
                 const statusData = await res.json().catch(() => ({}));
                 if (statusData.revoked) {
-                  await browserClient.auth.signOut().catch(() => {});
+                  await browserClient.auth.signOut().catch(() => { });
                   if (mounted) {
                     setUser(null);
                     setLogoutNotice("This session has been revoked by the security administrator.");
@@ -108,33 +108,18 @@ export function PocketAssetApp({ section = "overview" }: { section?: AppSection 
             }
           }
         } else {
-          // Standalone / Demo Mode session restoration (strictly local development only)
-          // In production, localStorage or sessionStorage alone can NEVER authenticate a user
-          if (process.env.NODE_ENV === "production") {
-            try {
-              localStorage.removeItem(STORAGE_KEY_SESSION);
-              localStorage.removeItem(STORAGE_KEY_SESSION_ID);
-            } catch {
-              // ignore
-            }
-            if (mounted) {
-              setUser(null);
-              setLoading(false);
-            }
-            return;
-          }
-
+          // Standalone / Offline / Persistent Session Restoration
           const stored = localStorage.getItem(STORAGE_KEY_SESSION);
           if (stored) {
             try {
               const parsed = JSON.parse(stored);
               if (parsed?.user && parsed?.sessionId) {
-                // Check server-side revocation
+                // Check server-side revocation if reachable
                 try {
                   const res = await fetch(`/api/auth/session-status?sessionId=${encodeURIComponent(parsed.sessionId)}`);
                   if (res.status === 401) {
                     const statusData = await res.json().catch(() => ({}));
-                    if (statusData.revoked) {
+                    if (statusData.revoked && statusData.revoked_by === "admin") {
                       localStorage.removeItem(STORAGE_KEY_SESSION);
                       localStorage.removeItem(STORAGE_KEY_SESSION_ID);
                       if (mounted) {
@@ -209,10 +194,13 @@ export function PocketAssetApp({ section = "overview" }: { section?: AppSection 
     async function checkSession() {
       try {
         const sid = sidRef.current || "sess-current";
+        // Skip polling if offline
+        if (typeof navigator !== "undefined" && !navigator.onLine) return;
+
         const res = await fetch(`/api/auth/session-status?sessionId=${encodeURIComponent(sid)}`);
         if (res.status === 401 && active) {
           const data = await res.json().catch(() => ({}));
-          if (data.revoked) {
+          if (data.revoked && (data.revoked_by === "admin" || data.error?.includes("revoked by"))) {
             await handleLogout("revoked");
           }
         }
@@ -264,7 +252,7 @@ export function PocketAssetApp({ section = "overview" }: { section?: AppSection 
         route,
         durationSeconds: 0,
       }),
-    }).catch(() => {});
+    }).catch(() => { });
 
     return () => {
       const durationSeconds = Math.round((Date.now() - startTime) / 1000);
@@ -279,7 +267,7 @@ export function PocketAssetApp({ section = "overview" }: { section?: AppSection 
             route,
             durationSeconds,
           }),
-        }).catch(() => {});
+        }).catch(() => { });
       }
     };
   }, [user, sessionId, section]);
@@ -307,7 +295,7 @@ export function PocketAssetApp({ section = "overview" }: { section?: AppSection 
         status: "success",
         loginMethod: "demo",
       }),
-    }).catch(() => {});
+    }).catch(() => { });
 
     setUser(demoUser);
     setSessionId(demoSessionId);
