@@ -118,10 +118,14 @@ export function createDemoSupabaseClient(): SupabaseClient {
       select: () => MockBuilder;
       order: () => MockBuilder;
       is: () => MockBuilder;
+      gte: (col?: string, val?: unknown) => MockBuilder;
+      lte: (col?: string, val?: unknown) => MockBuilder;
       range: (_from?: number, _to?: number) => Promise<{ data: unknown; error: null }>;
       eq: (col?: string, val?: unknown) => MockBuilder;
       single: () => Promise<{ data: unknown; error: null }>;
+      maybeSingle: () => Promise<{ data: unknown; error: null }>;
       insert: (record: unknown) => Promise<{ data: unknown; error: null }>;
+      upsert: (record: unknown, opts?: unknown) => MockBuilder;
       update: (updates: unknown) => MockBuilder;
       delete: () => Promise<{ data: null; error: null }>;
       then: (resolve: (val: { data: unknown; error: null }) => unknown) => unknown;
@@ -131,6 +135,9 @@ export function createDemoSupabaseClient(): SupabaseClient {
       select: () => builder,
       order: () => builder,
       is: () => builder,
+      gte: () => builder,
+      lte: () => builder,
+      upsert: () => builder,
       eq: (col?: string, val?: unknown) => {
         if (col) {
           filterCol = col;
@@ -142,12 +149,24 @@ export function createDemoSupabaseClient(): SupabaseClient {
       range: () => {
         const currentData = table === "account_balances" || table === "accounts"
           ? getPersistedAccounts()
+          : table === "calendar_days" || table === "day_closures"
+          ? []
           : getPersistedTransactions();
         return Promise.resolve({ data: currentData, error: null });
       },
       single: () => {
         const currentData = table === "account_balances" || table === "accounts"
           ? getPersistedAccounts()
+          : table === "calendar_days" || table === "day_closures"
+          ? []
+          : getPersistedTransactions();
+        return Promise.resolve({ data: currentData[0] || null, error: null });
+      },
+      maybeSingle: () => {
+        const currentData = table === "account_balances" || table === "accounts"
+          ? getPersistedAccounts()
+          : table === "calendar_days" || table === "day_closures"
+          ? []
           : getPersistedTransactions();
         return Promise.resolve({ data: currentData[0] || null, error: null });
       },
@@ -206,6 +225,8 @@ export function createDemoSupabaseClient(): SupabaseClient {
         executeUpdate();
         const currentData = table === "account_balances" || table === "accounts"
           ? getPersistedAccounts()
+          : table === "calendar_days" || table === "day_closures"
+          ? []
           : getPersistedTransactions();
         return Promise.resolve(resolve({ data: pendingUpdates || currentData, error: null }));
       },

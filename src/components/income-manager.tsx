@@ -66,25 +66,53 @@ export function IncomeManager({
   useEffect(() => {
     let cancelled = false;
     async function loadScheduleAndCalendar() {
-      const [scheduleResult, calendarResult] = await Promise.all([
-        supabase.from("allowance_schedules").select("*").maybeSingle(),
-        supabase.from("calendar_days").select("date,is_university_day,is_holiday,label").gte("date", weekStart).lte("date", weekEnd),
-      ]);
-      if (cancelled) return;
-      if (scheduleResult.error) setMetadataError(scheduleResult.error.message);
-      else {
-        const saved = scheduleResult.data as StoredSchedule | null;
-        setSchedule(saved);
-        if (saved) {
-          setExpectedAmount(paisaAmountInput(saved.expected_amount_paisa));
-          setExpectedDays(saved.expected_weekdays);
-          setScheduleStart(saved.start_date);
-          setScheduleEnd(saved.end_date ?? "");
-          setScheduleActive(saved.active);
+      let scheduleLoaded = false;
+      let calendarLoaded = false;
+      try {
+        const [scheduleResult, calendarResult] = await Promise.all([
+          supabase.from("allowance_schedules").select("*").maybeSingle(),
+          supabase.from("calendar_days").select("date,is_university_day,is_holiday,label").gte("date", weekStart).lte("date", weekEnd),
+        ]);
+        if (cancelled) return;
+        if (!scheduleResult.error) {
+          const saved = scheduleResult.data as StoredSchedule | null;
+          setSchedule(saved);
+          if (saved) {
+            setExpectedAmount(paisaAmountInput(saved.expected_amount_paisa));
+            setExpectedDays(saved.expected_weekdays);
+            setScheduleStart(saved.start_date);
+            setScheduleEnd(saved.end_date ?? "");
+            setScheduleActive(saved.active);
+          }
+          scheduleLoaded = true;
+        }
+        if (!calendarResult.error && calendarResult.data) {
+          setCalendarDays(calendarResult.data as CalendarDay[]);
+          calendarLoaded = true;
+        }
+      } catch {
+        // Fallback below
+      }
+
+      if (!calendarLoaded) {
+        try {
+          const res = await fetch(`/api/finance/calendar?weekStart=${encodeURIComponent(weekStart)}&weekEnd=${encodeURIComponent(weekEnd)}`);
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success && json.calendarDays) {
+              if (cancelled) return;
+              setCalendarDays(json.calendarDays as CalendarDay[]);
+              calendarLoaded = true;
+            }
+          }
+        } catch {
+          // ignore
         }
       }
-      if (calendarResult.error) setMetadataError((previous) => previous || calendarResult.error.message);
-      else setCalendarDays((calendarResult.data ?? []) as CalendarDay[]);
+
+      if (!calendarLoaded && !cancelled) {
+        setCalendarDays([]);
+      }
       setMetadataLoading(false);
     }
     void loadScheduleAndCalendar();

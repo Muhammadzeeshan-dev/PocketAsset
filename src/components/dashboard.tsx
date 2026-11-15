@@ -1443,17 +1443,44 @@ function DailyTrackerContent({
     const loadMetadata = async () => {
       setMetadataLoading(true);
       setMetadataError("");
-      const [calendarResult, closureResult] = await Promise.all([
-        supabase.from("calendar_days").select("*").gte("date", weekStart).lte("date", weekEnd),
-        supabase.from("day_closures").select("*").gte("date", weekStart).lte("date", weekEnd),
-      ]);
-      if (cancelled) return;
-      if (calendarResult.error || closureResult.error) {
-        setMetadataError(calendarResult.error?.message ?? closureResult.error?.message ?? "The calendar data could not be loaded.");
-      } else {
-        setCalendarDays((calendarResult.data ?? []) as CalendarDayRecord[]);
-        setClosures((closureResult.data ?? []) as DayClosureRecord[]);
+      try {
+        const [calendarResult, closureResult] = await Promise.all([
+          supabase.from("calendar_days").select("*").gte("date", weekStart).lte("date", weekEnd),
+          supabase.from("day_closures").select("*").gte("date", weekStart).lte("date", weekEnd),
+        ]);
+        if (cancelled) return;
+        if (!calendarResult.error && !closureResult.error) {
+          setCalendarDays((calendarResult.data ?? []) as CalendarDayRecord[]);
+          setClosures((closureResult.data ?? []) as DayClosureRecord[]);
+          setMetadataLoading(false);
+          return;
+        }
+      } catch {
+        // Fall back to server API below
       }
+
+      // Resilient server API fallback using service role client
+      try {
+        const res = await fetch(`/api/finance/calendar?weekStart=${encodeURIComponent(weekStart)}&weekEnd=${encodeURIComponent(weekEnd)}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) {
+            if (cancelled) return;
+            setCalendarDays((json.calendarDays ?? []) as CalendarDayRecord[]);
+            setClosures((json.closures ?? []) as DayClosureRecord[]);
+            setMetadataError("");
+            setMetadataLoading(false);
+            return;
+          }
+        }
+      } catch {
+        // Fall back to local empty state
+      }
+
+      if (cancelled) return;
+      setCalendarDays([]);
+      setClosures([]);
+      setMetadataError("");
       setMetadataLoading(false);
     };
     void loadMetadata();
@@ -1482,17 +1509,44 @@ function DailyTrackerContent({
       closed_at: now,
       updated_at: now,
     };
-    const { data, error } = await supabase.from("day_closures")
-      .upsert(snapshot, { onConflict: "user_id,date" })
-      .select("*")
-      .single();
-    setClosingDay(false);
-    if (error) {
-      setOperationError(error.message);
-      return;
+
+    let saved: DayClosureRecord | null = null;
+    try {
+      const { data, error } = await supabase.from("day_closures")
+        .upsert(snapshot, { onConflict: "user_id,date" })
+        .select("*")
+        .single();
+      if (!error && data) {
+        saved = data as DayClosureRecord;
+      }
+    } catch {
+      // Fallback to server route
     }
-    const saved = data as DayClosureRecord;
-    setClosures((previous) => [...previous.filter((item) => item.date !== saved.date), saved]);
+
+    if (!saved) {
+      try {
+        const res = await fetch("/api/finance/calendar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "closure", payload: snapshot }),
+        });
+        const resJson = await res.json().catch(() => ({}));
+        if (resJson.success && resJson.data) {
+          saved = resJson.data as DayClosureRecord;
+        } else {
+          setClosingDay(false);
+          setOperationError(resJson.error || "Failed to save day closure.");
+          return;
+        }
+      } catch (err) {
+        setClosingDay(false);
+        setOperationError(err instanceof Error ? err.message : "Failed to save day closure.");
+        return;
+      }
+    }
+
+    setClosingDay(false);
+    setClosures((previous) => [...previous.filter((item) => item.date !== saved!.date), saved!]);
     onToast("Day summary saved. You can still correct transactions later.");
   }
 
@@ -1699,20 +1753,49 @@ function ScheduleEditor({ userId, date, record, supabase, offline, onSaved, onEr
     setBusy(true);
     onError("");
     const timestamp = new Date().toISOString();
-    const { data, error } = await supabase.from("calendar_days").upsert({
+    const payload = {
       user_id: userId,
       date,
       is_university_day: universityDay,
       is_holiday: holiday,
       label: label.trim() || null,
       updated_at: timestamp,
-    }, { onConflict: "user_id,date" }).select("*").single();
-    setBusy(false);
-    if (error) {
-      onError(error.message);
-      return;
+    };
+
+    let saved: CalendarDayRecord | null = null;
+    try {
+      const { data, error } = await supabase.from("calendar_days").upsert(payload, { onConflict: "user_id,date" }).select("*").single();
+      if (!error && data) {
+        saved = data as CalendarDayRecord;
+      }
+    } catch {
+      // Fallback below
     }
-    onSaved(data as CalendarDayRecord);
+
+    if (!saved) {
+      try {
+        const res = await fetch("/api/finance/calendar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "schedule", payload }),
+        });
+        const resJson = await res.json().catch(() => ({}));
+        if (resJson.success && resJson.data) {
+          saved = resJson.data as CalendarDayRecord;
+        } else {
+          setBusy(false);
+          onError(resJson.error || "Failed to update calendar schedule.");
+          return;
+        }
+      } catch (err) {
+        setBusy(false);
+        onError(err instanceof Error ? err.message : "Failed to update calendar schedule.");
+        return;
+      }
+    }
+
+    setBusy(false);
+    onSaved(saved);
   }
 
   return <article className="panel schedule-panel">
