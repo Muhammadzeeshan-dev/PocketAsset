@@ -19,7 +19,6 @@ import {
   Eye,
   EyeOff,
   FileSpreadsheet,
-  Fingerprint,
   Flame,
   HeartPulse,
   Home,
@@ -110,7 +109,6 @@ import { WealthDoctorModal } from "@/components/wealth-doctor-modal";
 import { TaxOptimizerModal } from "@/components/tax-optimizer-modal";
 import { BillSplitterModal } from "@/components/bill-splitter-modal";
 import { FireCalculatorWidget } from "@/components/fire-calculator-widget";
-import { BiometricAuthModal } from "@/components/biometric-auth-modal";
 import { IntelligenceHub } from "@/components/intelligence-hub";
 import { calculateCashRunway } from "@/lib/runway";
 import { Shield } from "lucide-react";
@@ -168,7 +166,6 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
   const [showWealthDoctor, setShowWealthDoctor] = useState(false);
   const [showTaxOptimizer, setShowTaxOptimizer] = useState(false);
   const [showBillSplitter, setShowBillSplitter] = useState(false);
-  const [showBiometrics, setShowBiometrics] = useState(false);
   const [hideBalances, setHideBalances] = useState(false);
   const [toast, setToast] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -424,15 +421,6 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
               aria-label="Toggle Privacy Shield"
             >
               {hideBalances ? <EyeOff size={15} color="#e11d48" /> : <Eye size={15} />}
-            </button>
-            <button
-              type="button"
-              className="outline-button topbar-text-btn"
-              style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "11px", padding: "4px 9px" }}
-              onClick={() => setShowBiometrics(true)}
-              title="Windows Hello / Touch ID / Face ID Biometric Security"
-            >
-              <Fingerprint size={13} color="#2563eb" /> <span className="hide-on-mobile">Biometrics</span>
             </button>
             <button
               type="button"
@@ -941,16 +929,6 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
       {showBillSplitter && (
         <BillSplitterModal
           onClose={() => setShowBillSplitter(false)}
-        />
-      )}
-      {showBiometrics && (
-        <BiometricAuthModal
-          userEmail={user.email || ""}
-          userId={user.id}
-          onSuccess={() => {
-            setToast("Biometrics verified successfully!");
-          }}
-          onClose={() => setShowBiometrics(false)}
         />
       )}
       {editingAccount && (

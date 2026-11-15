@@ -2,13 +2,7 @@
 
 import { useState, useEffect, type FormEvent } from "react";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
-import { AlertCircle, CheckCircle2, Eye, EyeOff, Fingerprint, LockKeyhole, ScanFace, ShieldCheck, Sparkles, WalletCards } from "lucide-react";
-import {
-  authenticateWithBiometrics,
-  checkBiometricSupport,
-  isBiometricsEnrolled,
-  registerBiometricCredential,
-} from "@/lib/biometrics";
+import { AlertCircle, CheckCircle2, Eye, EyeOff, LockKeyhole, ShieldCheck, Sparkles, WalletCards } from "lucide-react";
 
 type LoginPageProps = {
   supabase: SupabaseClient | null;
@@ -26,94 +20,6 @@ export function LoginPage({ supabase, onAuthenticated, onTryDemo, logoutNotice }
   const [error, setError] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
-  const [bioSupported, setBioSupported] = useState(false);
-  const [bioDeviceName, setBioDeviceName] = useState("Fingerprint & Face Recognition");
-
-  useEffect(() => {
-    checkBiometricSupport().then((s) => {
-      setBioSupported(s.isSupported);
-      if (s.deviceFriendlyName) setBioDeviceName(s.deviceFriendlyName);
-    });
-  }, []);
-
-  async function handleBiometricLogin() {
-    setError("");
-    setInfoMessage("");
-    setBusy(true);
-
-    const clientTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Karachi";
-    const sessionId = `sess-bio-${crypto.randomUUID()}`;
-    const targetEmail = email.trim().toLowerCase() || "muhammadzeeshan7864x56@gmail.com";
-
-    try {
-      if (!isBiometricsEnrolled()) {
-        setInfoMessage("Prompting device for biometric thumb / face registration...");
-        await registerBiometricCredential("owner-1", targetEmail);
-        setInfoMessage("✓ Biometrics registered! Verifying identity...");
-      }
-
-      const result = await authenticateWithBiometrics();
-      if (!result.success) {
-        throw new Error(result.error || "Biometric scan cancelled.");
-      }
-
-      setInfoMessage("✓ Biometrics verified. Establishing secure session...");
-
-      // Call dedicated biometric-session endpoint to establish authoritative DB session
-      const bioRes = await fetch("/api/auth/biometric-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: targetEmail, sessionId }),
-      });
-
-      const bioData = await bioRes.json().catch(() => ({}));
-      const emailOtp = bioData?.emailOtp;
-      const ownerUuid = bioData?.userId || "cbaad70a-cc7d-4516-b2f1-e811e04e77b7";
-
-      // If Supabase client is available, exchange OTP for official JWT session
-      if (supabase && emailOtp) {
-        try {
-          const { data: authData, error: otpErr } = await supabase.auth.verifyOtp({
-            email: targetEmail,
-            token: emailOtp,
-            type: "email",
-          });
-          if (!otpErr && authData?.user) {
-            try {
-              localStorage.setItem("pocketasset_remember_me", rememberMe ? "true" : "false");
-            } catch {
-              // ignore
-            }
-            onAuthenticated(authData.user, sessionId);
-            return;
-          }
-        } catch {
-          // Fall through to verifiedOwner fallback
-        }
-      }
-
-      const verifiedOwner: User = {
-        id: ownerUuid,
-        email: targetEmail,
-        app_metadata: {},
-        user_metadata: { full_name: "Muhammad Zeeshan" },
-        aud: "authenticated",
-        created_at: "2026-11-06T00:00:00Z",
-      } as User;
-
-      try {
-        localStorage.setItem("pocketasset_remember_me", rememberMe ? "true" : "false");
-      } catch {
-        // ignore
-      }
-      onAuthenticated(verifiedOwner, sessionId);
-    } catch (caught) {
-      const msg = caught instanceof Error ? caught.message : "Biometric authentication failed.";
-      setError(msg);
-    } finally {
-      setBusy(false);
-    }
-  }
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -442,41 +348,6 @@ export function LoginPage({ supabase, onAuthenticated, onTryDemo, logoutNotice }
                 "Sign In"
               )}
             </button>
-
-            {bioSupported && (
-              <div style={{ marginTop: "14px" }}>
-                <div className="auth-demo-divider">
-                  <span>OR INSTANT HARDWARE UNLOCK</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleBiometricLogin}
-                  disabled={busy}
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "10px",
-                    padding: "11px 16px",
-                    borderRadius: "10px",
-                    background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
-                    color: "#ffffff",
-                    border: "1px solid rgba(59, 130, 246, 0.35)",
-                    fontSize: "12px",
-                    fontWeight: "700",
-                    cursor: "pointer",
-                    boxShadow: "0 4px 14px rgba(15, 23, 42, 0.15)",
-                    transition: "all 0.15s ease",
-                  }}
-                  title={`Sign in using ${bioDeviceName}`}
-                >
-                  <Fingerprint size={18} color="#38bdf8" />
-                  <ScanFace size={18} color="#38bdf8" />
-                  <span>Sign In with Thumb / Fingerprint &amp; Face ID</span>
-                </button>
-              </div>
-            )}
 
             <div className="auth-restricted-notice">
               <LockKeyhole size={14} />
