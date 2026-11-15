@@ -159,13 +159,41 @@ export function SettingsPage({
 
       {/* Liquid Accounts & Balance Reconciliation */}
       <section className="dashboard-card" style={{ marginBottom: "1.5rem" }}>
-        <div className="card-header">
+        <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "10px" }}>
           <div>
             <h3>Liquid Accounts &amp; Balance Reconciliation</h3>
             <p className="card-caption">
               Reconcile your actual cash in hand, JazzCash, Easypaisa, or bank balances when you forget to record daily transactions.
             </p>
           </div>
+          <button
+            type="button"
+            className="primary-button"
+            style={{ fontSize: "12px", padding: "6px 14px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+            onClick={async () => {
+              try {
+                const cashAcc = accounts.find((a) => a.name.toLowerCase().includes("cash"));
+                const jazzAcc = accounts.find((a) => a.name.toLowerCase().includes("jazz"));
+                const easyAcc = accounts.find((a) => a.name.toLowerCase().includes("easy"));
+
+                if (cashAcc) {
+                  await supabase.from("accounts").update({ opening_balance_paisa: "400000" }).eq("id", cashAcc.id);
+                }
+                if (jazzAcc) {
+                  await supabase.from("accounts").update({ opening_balance_paisa: "321000" }).eq("id", jazzAcc.id);
+                }
+                if (easyAcc) {
+                  await supabase.from("accounts").update({ opening_balance_paisa: "159900" }).eq("id", easyAcc.id);
+                }
+                onRefresh();
+                onToast("Updated balances: Cash Rs. 4,000 | JazzCash Rs. 3,210 | Easypaisa Rs. 1,599.");
+              } catch (e) {
+                onToast("Failed to apply profile balances.");
+              }
+            }}
+          >
+            <CheckCircle2 size={14} /> Quick Set (Cash: Rs 4,000 | Jazz: Rs 3,210 | Easy: Rs 1,599)
+          </button>
         </div>
 
         <div style={{ marginTop: "1rem" }}>

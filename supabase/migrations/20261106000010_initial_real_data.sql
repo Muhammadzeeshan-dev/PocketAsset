@@ -1,6 +1,10 @@
 -- PocketAsset Initial Real Financial Data (Starting Date: November 6, 2026)
 -- Single-user private ledger opening balances & PSX holdings
 
+-- Ensure transactions id has default UUID generation
+alter table if exists public.transactions
+  alter column id set default gen_random_uuid();
+
 create or replace function public.initialize_owner_real_data(target_user_id uuid)
 returns void
 language plpgsql
@@ -12,17 +16,27 @@ declare
   jazz_acc_id uuid;
   easy_acc_id uuid;
 begin
-  -- 1. Insert Verified Opening Accounts (Starting Date: November 6, 2026)
-  -- Cash: PKR 7,620 | JazzCash: PKR 10 | Easypaisa: PKR 1,599 | Total: PKR 9,229
+  -- 1. Insert or Update Verified Opening Accounts
+  -- Cash: PKR 4,000 | JazzCash: PKR 3,210 | Easypaisa: PKR 1,599 | Total: PKR 8,809
   insert into public.accounts (id, user_id, name, account_type, opening_balance_paisa, currency, is_active)
   values
-    (gen_random_uuid(), target_user_id, 'Cash in hand', 'cash', 762000, 'PKR', true),
-    (gen_random_uuid(), target_user_id, 'JazzCash', 'wallet', 1000, 'PKR', true),
+    (gen_random_uuid(), target_user_id, 'Cash in hand', 'cash', 400000, 'PKR', true),
+    (gen_random_uuid(), target_user_id, 'JazzCash', 'wallet', 321000, 'PKR', true),
     (gen_random_uuid(), target_user_id, 'Easypaisa', 'wallet', 159900, 'PKR', true),
     (gen_random_uuid(), target_user_id, 'Bank Account', 'bank', 0, 'PKR', true),
     (gen_random_uuid(), target_user_id, 'Savings Account', 'savings', 0, 'PKR', true),
     (gen_random_uuid(), target_user_id, 'Brokerage Cash Balance', 'brokerage_cash', 0, 'PKR', true)
   on conflict do nothing;
+
+  -- Ensure existing accounts match verified balances
+  update public.accounts set opening_balance_paisa = 400000, updated_at = now()
+  where user_id = target_user_id and name = 'Cash in hand';
+
+  update public.accounts set opening_balance_paisa = 321000, updated_at = now()
+  where user_id = target_user_id and name = 'JazzCash';
+
+  update public.accounts set opening_balance_paisa = 159900, updated_at = now()
+  where user_id = target_user_id and name = 'Easypaisa';
 
   -- 2. Insert Verified Historical PSX Holdings (November 6, 2026 Snapshot)
   -- Total Cost: PKR 16,148.63 | Market Value: PKR 17,404.26 | Unrealized Profit: PKR 1,255.63

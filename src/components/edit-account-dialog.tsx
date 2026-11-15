@@ -17,7 +17,9 @@ import {
   parseRupeesToPaisa,
   type AccountType,
   type FinanceAccount,
+  type FinanceTransaction,
 } from "@/lib/finance";
+import { queueOfflineTransaction, removePendingTransaction } from "@/lib/offline";
 
 export interface EditAccountDialogProps {
   account: FinanceAccount;
@@ -139,9 +141,15 @@ export function EditAccountDialog({
       const absAmount = delta > 0n ? delta : -delta;
       const direction = delta > 0n ? "inflow" : "outflow";
 
-      const { error: insertError } = await supabase.from("transactions").insert({
+      const txId = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `tx-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+      const transaction: FinanceTransaction = {
+        id: txId,
         user_id: userId,
         account_id: account.id,
+        transfer_to_account_id: null,
         transaction_type: "adjustment",
         amount_paisa: absAmount.toString(),
         direction,
@@ -149,13 +157,39 @@ export function EditAccountDialog({
         description: `Balance adjustment: ${account.name}`,
         category: "Adjustment",
         notes: adjustmentReason.trim() || `Reconciled balance from ${formatPkr(currentBalance)} to ${formatPkr(parsedActualPaisa)}`,
-      });
+      };
 
-      if (insertError) throw insertError;
+      let queuedLocally = false;
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        await queueOfflineTransaction(userId, transaction);
+        onUpdated(`Saved offline on device. ${account.name} balance adjusted to ${formatPkr(parsedActualPaisa)}.`);
+        return;
+      }
+
+      queuedLocally = await queueOfflineTransaction(userId, transaction).then(() => true).catch(() => false);
+      const { error: insertError } = await supabase.from("transactions").insert(transaction);
+
+      if (insertError) {
+        if (insertError.code === "23505") {
+          const { data } = await supabase.from("transactions").select("id").eq("id", transaction.id).maybeSingle();
+          if (data) {
+            await removePendingTransaction(userId, transaction.id).catch(() => undefined);
+            onUpdated(`Adjusted ${account.name} balance to ${formatPkr(parsedActualPaisa)}.`);
+            return;
+          }
+        }
+        const errMsg = insertError.message || (insertError as any).details || (insertError as any).hint || "Failed to record balance adjustment.";
+        throw new Error(errMsg);
+      }
+
+      if (queuedLocally) {
+        await removePendingTransaction(userId, transaction.id).catch(() => undefined);
+      }
 
       onUpdated(`Adjusted ${account.name} balance to ${formatPkr(parsedActualPaisa)}. All views updated.`);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Failed to record balance adjustment.");
+      const msg = caught instanceof Error ? caught.message : typeof caught === "string" ? caught : "Failed to record balance adjustment.";
+      setError(msg);
     } finally {
       setBusy(false);
     }
@@ -194,11 +228,15 @@ export function EditAccountDialog({
         })
         .eq("id", account.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        const errMsg = updateError.message || (updateError as any).details || (updateError as any).hint || "Failed to update account details.";
+        throw new Error(errMsg);
+      }
 
       onUpdated(`Account "${trimmedName}" settings updated successfully.`);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Failed to update account details.");
+      const msg = caught instanceof Error ? caught.message : typeof caught === "string" ? caught : "Failed to update account details.";
+      setError(msg);
     } finally {
       setBusy(false);
     }

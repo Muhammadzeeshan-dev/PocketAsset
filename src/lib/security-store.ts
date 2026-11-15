@@ -731,17 +731,24 @@ export async function storeOtpChallenge(
     }
   }
 
+  // Always invalidate existing in-memory challenges for this user
+  for (const c of memoryOtpChallenges) {
+    if (c.userId === userId) {
+      c.isUsed = true;
+    }
+  }
+
   const supabase = getSupabaseServerClient();
   if (supabase) {
     try {
-      // Invalidate existing unused challenges for this user
+      // Invalidate existing unused challenges for this user in Supabase
       await supabase
         .from("admin_otp_challenges")
         .update({ is_used: true })
         .eq("user_id", userId)
         .eq("is_used", false);
 
-      await supabase.from("admin_otp_challenges").insert({
+      const { error: insertError } = await supabase.from("admin_otp_challenges").insert({
         user_id: userId,
         admin_email: adminEmail,
         otp_hash: otpHash,
@@ -750,14 +757,14 @@ export async function storeOtpChallenge(
         expires_at: expiresAt.toISOString(),
         is_used: false,
       });
-      return;
+      if (!insertError) return;
     } catch {
       // Fallback
     }
   }
 
   memoryOtpChallenges.push({
-    id: `otp-${Date.now()}`,
+    id: `otp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     userId,
     adminEmail,
     otpHash,

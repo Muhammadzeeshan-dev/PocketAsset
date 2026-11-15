@@ -10,8 +10,8 @@ export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseKey);
 let browserClient: SupabaseClient | null = null;
 
 export const DEMO_ACCOUNTS: FinanceAccount[] = [
-  { id: "acc-cash", name: "Cash in hand", account_type: "cash", opening_balance_paisa: 762000n, currency: "PKR", is_active: true },
-  { id: "acc-jazz", name: "JazzCash", account_type: "wallet", opening_balance_paisa: 1000n, currency: "PKR", is_active: true },
+  { id: "acc-cash", name: "Cash in hand", account_type: "cash", opening_balance_paisa: 400000n, currency: "PKR", is_active: true },
+  { id: "acc-jazz", name: "JazzCash", account_type: "wallet", opening_balance_paisa: 321000n, currency: "PKR", is_active: true },
   { id: "acc-easy", name: "Easypaisa", account_type: "wallet", opening_balance_paisa: 159900n, currency: "PKR", is_active: true },
   { id: "acc-bank", name: "Bank Account", account_type: "bank", opening_balance_paisa: 0n, currency: "PKR", is_active: true },
   { id: "acc-savings", name: "Savings Account", account_type: "savings", opening_balance_paisa: 0n, currency: "PKR", is_active: true },
