@@ -235,6 +235,7 @@ export function PocketAssetApp({ section = "overview" }: { section?: AppSection 
       inventory: "Household Inventory",
       savings: "Savings Goals & Emergency Fund",
       investments: "PSX Stock Investments",
+      "sarmaya-pro": "Sarmaya & Zerodha Pro Wealth Terminal",
       assets: "Assets & Net Worth",
       zakat: "Zakat & Nisab Calculator",
       reports: "Financial Reports",

@@ -24,6 +24,7 @@ let memoryTransactions = [...DEMO_TRANSACTIONS];
 
 const STORAGE_DEMO_ACCOUNTS = "pocketasset_persisted_accounts";
 const STORAGE_DEMO_TRANSACTIONS = "pocketasset_persisted_transactions";
+const STORAGE_DEMO_RECURRING = "pocketasset_persisted_recurring";
 
 export function getPersistedAccounts(): FinanceAccount[] {
   if (typeof window === "undefined" || !window.localStorage) return DEMO_ACCOUNTS;
@@ -79,6 +80,27 @@ export function savePersistedTransactions(txs: FinanceTransaction[]): void {
   }
 }
 
+export function getPersistedRecurringSchedules(): unknown[] {
+  if (typeof window === "undefined" || !window.localStorage) return [];
+  try {
+    const raw = window.localStorage.getItem(STORAGE_DEMO_RECURRING);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function savePersistedRecurringSchedules(schedules: unknown[]): void {
+  if (typeof window === "undefined" || !window.localStorage) return;
+  try {
+    window.localStorage.setItem(STORAGE_DEMO_RECURRING, JSON.stringify(schedules));
+  } catch {
+    // ignore
+  }
+}
+
 export function createDemoSupabaseClient(): SupabaseClient {
   const queryBuilder = (table: string) => {
     let filterCol: string | null = null;
@@ -110,6 +132,17 @@ export function createDemoSupabaseClient(): SupabaseClient {
           Object.assign(target, pendingUpdates);
           savePersistedTransactions(currentTxs);
           memoryTransactions = currentTxs;
+        }
+      }
+      if (pendingUpdates && table === "recurring_expense_schedules") {
+        const currentSchedules = getPersistedRecurringSchedules() as Record<string, unknown>[];
+        const target = currentSchedules.find((s) => {
+          if (!filterCol) return true;
+          return s[filterCol] === filterVal;
+        });
+        if (target) {
+          Object.assign(target, pendingUpdates);
+          savePersistedRecurringSchedules(currentSchedules);
         }
       }
     };
@@ -149,6 +182,8 @@ export function createDemoSupabaseClient(): SupabaseClient {
       range: () => {
         const currentData = table === "account_balances" || table === "accounts"
           ? getPersistedAccounts()
+          : table === "recurring_expense_schedules"
+          ? getPersistedRecurringSchedules()
           : table === "calendar_days" || table === "day_closures"
           ? []
           : getPersistedTransactions();
@@ -157,18 +192,22 @@ export function createDemoSupabaseClient(): SupabaseClient {
       single: () => {
         const currentData = table === "account_balances" || table === "accounts"
           ? getPersistedAccounts()
+          : table === "recurring_expense_schedules"
+          ? getPersistedRecurringSchedules()
           : table === "calendar_days" || table === "day_closures"
           ? []
           : getPersistedTransactions();
-        return Promise.resolve({ data: currentData[0] || null, error: null });
+        return Promise.resolve({ data: (currentData as unknown[])[0] || null, error: null });
       },
       maybeSingle: () => {
         const currentData = table === "account_balances" || table === "accounts"
           ? getPersistedAccounts()
+          : table === "recurring_expense_schedules"
+          ? getPersistedRecurringSchedules()
           : table === "calendar_days" || table === "day_closures"
           ? []
           : getPersistedTransactions();
-        return Promise.resolve({ data: currentData[0] || null, error: null });
+        return Promise.resolve({ data: (currentData as unknown[])[0] || null, error: null });
       },
       insert: (record: unknown) => {
         const item = (Array.isArray(record) ? record[0] : record) as Record<string, unknown>;
@@ -205,6 +244,16 @@ export function createDemoSupabaseClient(): SupabaseClient {
           savePersistedAccounts(updatedAccounts);
           return Promise.resolve({ data: accWithId, error: null });
         }
+        if (table === "recurring_expense_schedules") {
+          const currentSchedules = getPersistedRecurringSchedules() as Record<string, unknown>[];
+          const newSchedule = {
+            id: (item.id as string) || `sch-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            ...item,
+          };
+          const updated = [...currentSchedules, newSchedule];
+          savePersistedRecurringSchedules(updated);
+          return Promise.resolve({ data: newSchedule, error: null });
+        }
         return Promise.resolve({ data: item, error: null });
       },
       update: (updates: unknown) => {
@@ -219,12 +268,19 @@ export function createDemoSupabaseClient(): SupabaseClient {
           savePersistedTransactions(filtered);
           memoryTransactions = filtered;
         }
+        if (table === "recurring_expense_schedules" && filterCol === "id" && filterVal) {
+          const currentSchedules = getPersistedRecurringSchedules() as Record<string, unknown>[];
+          const filtered = currentSchedules.filter((s) => s.id !== filterVal);
+          savePersistedRecurringSchedules(filtered);
+        }
         return Promise.resolve({ data: null, error: null });
       },
       then: (resolve) => {
         executeUpdate();
         const currentData = table === "account_balances" || table === "accounts"
           ? getPersistedAccounts()
+          : table === "recurring_expense_schedules"
+          ? getPersistedRecurringSchedules()
           : table === "calendar_days" || table === "day_closures"
           ? []
           : getPersistedTransactions();

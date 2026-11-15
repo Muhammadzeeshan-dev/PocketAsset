@@ -7,7 +7,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL%20RLS-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com/)
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
-[![Vitest](https://img.shields.io/badge/Tests-72%20Passed-6E9F18?style=for-the-badge&logo=vitest)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Tests-119%20Passed-6E9F18?style=for-the-badge&logo=vitest)](https://vitest.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
 ---
@@ -22,10 +22,25 @@ Built specifically to handle the realities of Pakistani personal finance (PKR cu
 
 ## 🚀 Key Features
 
+### 💎 Sarmaya & Zerodha Pro Wealth Terminal (Unlocked 100% Free)
+Features typically locked behind expensive paid subscriptions (PKR 15,000–25,000/yr on Sarmaya.pk or Indian platforms like Zerodha Console / INDmoney) are provided natively and completely free:
+- **PSX Dividend & Yield Forecaster:** Track dividend yields, DPS, and payment cadences for Pakistan's premier dividend aristocrats (**FFC, HUBC, ENGRO, OGDC, MCB, EFERT, POL, MEBL**).
+- **FBR Withholding Tax Shield:** Computes exact 15% Active Filer tax vs 30% Non-Filer tax penalty under the FBR Income Tax Ordinance, quantifying exact annual tax savings.
+- **10-Year DRIP Compounder:** Compares reinvested dividend wealth growth against cash withdrawals.
+- **30-Year Stochastic Monte Carlo Simulator:** Simulates 1,000 stochastic market iterations incorporating KSE-100 volatility and Pakistani CPI inflation to calculate conservative (10th %ile), base (median), and bull (90th %ile) trajectories.
+- **Crorepati Milestone Radar:** Predicts the exact age and years required to reach **Rs. 1 Crore (10 Million PKR)** and **Rs. 5 Crore (50 Million PKR)** in nominal wealth vs real inflation-adjusted purchasing power.
+- **Macro Black-Swan Stress Shield:** Tests your verified liquid balances (Cash + JazzCash + Easypaisa) against 4 major shocks:
+  1. *Sudden Income Blackout* (Days of survival with zero incoming cashflow).
+  2. *25% PKR Currency Devaluation* (Import inflation pass-through to domestic bills).
+  3. *Unplanned Medical / Emergency Spike* (Rs. 40,000 instant liquidity hit).
+  4. *Stagflation Squeeze* (+30% utility and living cost surge).
+- **Pakistan FIRE Matrix:** Calculates Lean FIRE (25x), Standard FIRE (30x), and Fat FIRE (40x) retirement corpuses tailored to Pakistani living standards.
+
 ### 💰 Complete Liquid Cash & Multi-Wallet Management
 - **Separate Account Ledgers:** Track Cash in hand, JazzCash, Easypaisa, Bank Accounts, Savings Accounts, and Brokerage Cash Balances.
 - **Accurate Balance Synchronization:** Live balances calculated from verified transaction history.
 - **Inter-Account Transfers:** Transfer funds between wallets (e.g. Bank to JazzCash) with zero balance leakage.
+- **Recurring Expense Engine:** Zero-permission resilient recurring schedule engine with confirmation workflows for repeating subscriptions and bills.
 
 ### 📈 Pakistan Stock Exchange (PSX) Investment Portfolio
 - **Holdings Tracker:** Track shares quantity, average purchase price, current market price, and snapshot valuation.

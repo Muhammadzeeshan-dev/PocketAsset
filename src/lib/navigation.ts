@@ -9,6 +9,7 @@ export type AppSection =
   | "inventory"
   | "savings"
   | "investments"
+  | "sarmaya-pro"
   | "assets"
   | "reports"
   | "zakat"

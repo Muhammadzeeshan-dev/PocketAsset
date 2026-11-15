@@ -46,6 +46,7 @@ import {
   Wallet,
   WalletCards,
   X,
+  Zap,
 } from "lucide-react";
 import {
   Bar,
@@ -110,6 +111,7 @@ import { TaxOptimizerModal } from "@/components/tax-optimizer-modal";
 import { BillSplitterModal } from "@/components/bill-splitter-modal";
 import { FireCalculatorWidget } from "@/components/fire-calculator-widget";
 import { IntelligenceHub } from "@/components/intelligence-hub";
+import { SarmayaProSuite } from "@/components/sarmaya-pro-suite";
 import { calculateCashRunway } from "@/lib/runway";
 import { Shield } from "lucide-react";
 
@@ -369,6 +371,7 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
           <NavLinkItem href="/inventory" icon={Home} label="Household inventory" active={section === "inventory"} onClick={() => setMobileNavOpen(false)} />
           <NavLinkItem href="/savings" icon={PiggyBank} label="Savings goals" active={section === "savings"} onClick={() => setMobileNavOpen(false)} />
           <NavLinkItem href="/investments" icon={TrendingUp} label="Investments" active={section === "investments"} onClick={() => setMobileNavOpen(false)} />
+          <NavLinkItem href="/sarmaya-pro" icon={Zap} label="Sarmaya Pro" badge="PRO" active={section === "sarmaya-pro"} onClick={() => setMobileNavOpen(false)} />
           <NavLinkItem href="/assets" icon={Landmark} label="Assets & liabilities" active={section === "assets"} onClick={() => setMobileNavOpen(false)} />
           <NavLinkItem href="/zakat" icon={Moon} label="Zakat & Nisab" active={section === "zakat"} onClick={() => setMobileNavOpen(false)} />
           <NavLinkItem href="/reports" icon={Activity} label="Reports" active={section === "reports"} onClick={() => setMobileNavOpen(false)} />
@@ -401,6 +404,7 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
                   : section === "inventory" ? "Household inventory"
                   : section === "savings" ? "Savings goals"
                   : section === "investments" ? "Investments"
+                  : section === "sarmaya-pro" ? "Sarmaya & Zerodha Pro Wealth Terminal"
                   : section === "assets" ? "Assets & liabilities"
                   : section === "zakat" ? "Zakat & Nisab Calculator"
                   : section === "reports" ? "Reports"
@@ -534,6 +538,9 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
             refreshing={refreshing}
             onRefresh={() => void refreshData(true)}
             onToast={setToast}
+          /> : section === "sarmaya-pro" ? <SarmayaProSuite
+            accounts={accounts}
+            transactions={transactions}
           /> : section === "assets" ? <AssetsManager
             userId={user.id}
             supabase={supabase}
@@ -625,7 +632,46 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
             <Link href="/calendar" className="quick-action"><CalendarDays size={14} /> View Calendar</Link>
             <Link href="/zakat" className="quick-action"><Moon size={14} /> Zakat &amp; Nisab</Link>
             <Link href="/investments" className="quick-action quick-investment"><TrendingUp size={14} /> View Investments</Link>
+            <Link href="/sarmaya-pro" className="quick-action" style={{ background: "linear-gradient(135deg, #fef3c7, #fde68a)", color: "#92400e", borderColor: "#fcd34d", fontWeight: 700 }}><Sparkles size={14} /> Sarmaya Pro (Free)</Link>
           </section>
+
+          {/* Sarmaya Pro Financial Suite Spotlight Card */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "14px 18px",
+              borderRadius: "12px",
+              background: "linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)",
+              border: "1px solid #bfdbfe",
+              margin: "12px 0 16px",
+              flexWrap: "wrap",
+              gap: "12px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "#2563eb", display: "grid", placeItems: "center", color: "#ffffff", flexShrink: 0 }}>
+                <Zap size={20} />
+              </div>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <strong style={{ fontSize: "14px", color: "#1e3a8a" }}>Sarmaya &amp; Zerodha Pro Wealth Terminal</strong>
+                  <span style={{ fontSize: "9px", fontWeight: 750, background: "#dbeafe", color: "#1d4ed8", padding: "1px 6px", borderRadius: "8px" }}>FREE TIER</span>
+                </div>
+                <span style={{ fontSize: "11px", color: "#475569" }}>
+                  PSX Dividend Aristocrats Forecaster (FBR 15% vs 30% WHT), 30-Year Stochastic Monte Carlo (Crorepati Roadmap), &amp; Black-Swan Stress Shield.
+                </span>
+              </div>
+            </div>
+            <Link
+              href="/sarmaya-pro"
+              className="primary-button"
+              style={{ fontSize: "11px", padding: "6px 14px", gap: "6px" }}
+            >
+              Launch Pro Terminal <ArrowRight size={14} />
+            </Link>
+          </div>
 
           {/* Predictive Cash Runway & Burn Rate Insight */}
           <div
@@ -977,14 +1023,37 @@ function NavButton({ icon: Icon, label, active = false, disabled = false, onClic
   return <button type="button" className={`nav-item ${active ? "nav-item-active" : ""}`} disabled={disabled} onClick={onClick} aria-current={active ? "page" : undefined} title={disabled ? "This module will be available in a later development phase" : undefined}><Icon size={17} strokeWidth={1.9} /><span>{label}</span>{active && <span className="nav-active-indicator" />}</button>;
 }
 
-function NavLinkItem({ href, icon: Icon, label, active, onClick }: {
+function NavLinkItem({ href, icon: Icon, label, badge, active, onClick }: {
   href: string;
   icon: typeof LayoutDashboard;
   label: string;
+  badge?: string;
   active: boolean;
   onClick?: () => void;
 }) {
-  return <Link href={href} className={`nav-item ${active ? "nav-item-active" : ""}`} aria-current={active ? "page" : undefined} onClick={onClick}><Icon size={17} strokeWidth={1.9} /><span>{label}</span>{active && <span className="nav-active-indicator" />}</Link>;
+  return (
+    <Link href={href} className={`nav-item ${active ? "nav-item-active" : ""}`} aria-current={active ? "page" : undefined} onClick={onClick}>
+      <Icon size={17} strokeWidth={1.9} />
+      <span>{label}</span>
+      {badge && (
+        <span
+          style={{
+            marginLeft: "auto",
+            fontSize: "9px",
+            fontWeight: 750,
+            padding: "1px 5px",
+            borderRadius: "8px",
+            background: "linear-gradient(135deg, #fef3c7, #fde68a)",
+            color: "#92400e",
+            border: "1px solid #fcd34d",
+          }}
+        >
+          {badge}
+        </span>
+      )}
+      {active && <span className="nav-active-indicator" />}
+    </Link>
+  );
 }
 
 function MetricCard({ icon: Icon, label, value, tone, hint, compact = false, muted = false }: {
