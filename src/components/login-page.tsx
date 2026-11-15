@@ -57,29 +57,43 @@ export function LoginPage({ supabase, onAuthenticated, onTryDemo, logoutNotice }
         throw new Error(result.error || "Biometric scan cancelled.");
       }
 
-      await fetch("/api/auth/login-audit", {
+      setInfoMessage("✓ Biometrics verified. Establishing secure session...");
+
+      // Call dedicated biometric-session endpoint to establish authoritative DB session
+      const bioRes = await fetch("/api/auth/biometric-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: "owner-biometric",
-          userEmail: targetEmail,
-          sessionId,
-          clientTimezone,
-          status: "success",
-          loginMethod: "biometric_webauthn",
-        }),
-      }).catch(() => {});
+        body: JSON.stringify({ email: targetEmail, sessionId }),
+      });
 
-      if (supabase) {
-        const { data } = await supabase.auth.getSession();
-        if (data.session?.user) {
-          onAuthenticated(data.session.user, sessionId);
-          return;
+      const bioData = await bioRes.json().catch(() => ({}));
+      const emailOtp = bioData?.emailOtp;
+      const ownerUuid = bioData?.userId || "cbaad70a-cc7d-4516-b2f1-e811e04e77b7";
+
+      // If Supabase client is available, exchange OTP for official JWT session
+      if (supabase && emailOtp) {
+        try {
+          const { data: authData, error: otpErr } = await supabase.auth.verifyOtp({
+            email: targetEmail,
+            token: emailOtp,
+            type: "email",
+          });
+          if (!otpErr && authData?.user) {
+            try {
+              localStorage.setItem("pocketasset_remember_me", rememberMe ? "true" : "false");
+            } catch {
+              // ignore
+            }
+            onAuthenticated(authData.user, sessionId);
+            return;
+          }
+        } catch {
+          // Fall through to verifiedOwner fallback
         }
       }
 
       const verifiedOwner: User = {
-        id: "owner-user-biometric",
+        id: ownerUuid,
         email: targetEmail,
         app_metadata: {},
         user_metadata: { full_name: "Muhammad Zeeshan" },

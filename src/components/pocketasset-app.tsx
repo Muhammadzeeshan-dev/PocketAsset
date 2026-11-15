@@ -77,6 +77,8 @@ export function PocketAssetApp({ section = "overview" }: { section?: AppSection 
 
     async function initSession() {
       try {
+        let sessionRestored = false;
+
         if (browserClient) {
           const { data } = await browserClient.auth.getSession();
           if (mounted && data.session?.user) {
@@ -86,7 +88,7 @@ export function PocketAssetApp({ section = "overview" }: { section?: AppSection 
               const res = await fetch(`/api/auth/session-status?sessionId=${encodeURIComponent(sid)}`);
               if (res.status === 401) {
                 const statusData = await res.json().catch(() => ({}));
-                if (statusData.revoked) {
+                if (statusData.revoked && (statusData.revoked_by === "admin" || statusData.error?.includes("revoked by"))) {
                   await browserClient.auth.signOut().catch(() => { });
                   if (mounted) {
                     setUser(null);
@@ -105,10 +107,13 @@ export function PocketAssetApp({ section = "overview" }: { section?: AppSection 
               setSessionId(sid);
               setDemoMode(false);
               setSupabaseClient(browserClient);
+              sessionRestored = true;
             }
           }
-        } else {
-          // Standalone / Offline / Persistent Session Restoration
+        }
+
+        // If Supabase auth session was not found, check persistent local storage session
+        if (!sessionRestored && mounted) {
           const stored = localStorage.getItem(STORAGE_KEY_SESSION);
           if (stored) {
             try {
@@ -119,7 +124,7 @@ export function PocketAssetApp({ section = "overview" }: { section?: AppSection 
                   const res = await fetch(`/api/auth/session-status?sessionId=${encodeURIComponent(parsed.sessionId)}`);
                   if (res.status === 401) {
                     const statusData = await res.json().catch(() => ({}));
-                    if (statusData.revoked && statusData.revoked_by === "admin") {
+                    if (statusData.revoked && (statusData.revoked_by === "admin" || statusData.error?.includes("revoked by"))) {
                       localStorage.removeItem(STORAGE_KEY_SESSION);
                       localStorage.removeItem(STORAGE_KEY_SESSION_ID);
                       if (mounted) {
@@ -137,8 +142,8 @@ export function PocketAssetApp({ section = "overview" }: { section?: AppSection 
                 if (mounted) {
                   setUser(parsed.user);
                   setSessionId(parsed.sessionId);
-                  setDemoMode(true);
-                  setSupabaseClient(createDemoSupabaseClient());
+                  setDemoMode(false);
+                  setSupabaseClient(browserClient || createDemoSupabaseClient());
                 }
               }
             } catch {
@@ -158,13 +163,13 @@ export function PocketAssetApp({ section = "overview" }: { section?: AppSection 
     // Listen for auth state change if Supabase is active
     let authSubscription: { unsubscribe: () => void } | null = null;
     if (browserClient) {
-      const { data: listener } = browserClient.auth.onAuthStateChange((_event, session) => {
+      const { data: listener } = browserClient.auth.onAuthStateChange((event, session) => {
         if (mounted) {
           if (session?.user) {
             setUser(session.user);
             setDemoMode(false);
             setSupabaseClient(browserClient);
-          } else {
+          } else if (event === "SIGNED_OUT") {
             setUser(null);
             setSessionId(null);
           }

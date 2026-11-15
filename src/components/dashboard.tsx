@@ -85,6 +85,7 @@ import {
   queueOfflineTransaction,
   removePendingTransaction,
 } from "@/lib/offline";
+import { getPersistedAccounts, getPersistedTransactions } from "@/lib/supabase";
 import type { AppSection } from "@/lib/navigation";
 import { TransactionsPage } from "@/components/transactions-page";
 import { IncomeManager } from "@/components/income-manager";
@@ -219,17 +220,53 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
         void syncPendingTransactions(user.id, supabase, pending);
       }
     } catch (caught) {
-      const cached = await getCachedFinancialData(user.id).catch(() => ({ accounts: [], transactions: [] }));
-      const pending = await getPendingTransactions(user.id).catch(() => []);
-      if (cached.accounts.length || cached.transactions.length || pending.length) {
-        const knownIds = new Set(cached.transactions.map((transaction) => transaction.id));
-        setAccounts(cached.accounts);
-        setTransactions([...cached.transactions, ...pending.filter((transaction) => !knownIds.has(transaction.id))]);
-        setOffline(true);
-        setDataAvailable(true);
-      } else {
-        setDataAvailable(false);
-        setLoadError(caught instanceof Error ? caught.message : "The finance data could not be loaded.");
+      let serverFallbackSuccess = false;
+      try {
+        const fallbackRes = await fetch("/api/finance/data");
+        if (fallbackRes.ok) {
+          const json = await fallbackRes.json();
+          if (json.success && Array.isArray(json.accounts) && json.accounts.length > 0) {
+            const parsedAccounts: FinanceAccount[] = json.accounts.map((a: any) => ({
+              ...a,
+              opening_balance_paisa: BigInt(a.opening_balance_paisa || 0),
+            }));
+            const parsedTxs: FinanceTransaction[] = (json.transactions || []).map((t: any) => ({
+              ...t,
+              amount_paisa: String(t.amount_paisa || 0),
+            }));
+            await cacheFinancialData(user.id, parsedAccounts, parsedTxs).catch(() => undefined);
+            setAccounts(parsedAccounts);
+            setTransactions(parsedTxs);
+            setDataAvailable(true);
+            setOffline(false);
+            setLoadError("");
+            serverFallbackSuccess = true;
+          }
+        }
+      } catch {
+        // Fall back to offline storage below
+      }
+
+      if (!serverFallbackSuccess) {
+        const cached = await getCachedFinancialData(user.id).catch(() => ({ accounts: [], transactions: [] }));
+        const persistedAccounts = getPersistedAccounts();
+        const persistedTransactions = getPersistedTransactions();
+        const pending = await getPendingTransactions(user.id).catch(() => []);
+
+        const fallbackAccounts = cached.accounts.length > 0 ? cached.accounts : persistedAccounts;
+        const baseTransactions = cached.transactions.length > 0 ? cached.transactions : persistedTransactions;
+
+        if (fallbackAccounts.length || baseTransactions.length || pending.length) {
+          const knownIds = new Set(baseTransactions.map((transaction) => transaction.id));
+          setAccounts(fallbackAccounts);
+          setTransactions([...baseTransactions, ...pending.filter((transaction) => !knownIds.has(transaction.id))]);
+          setOffline(true);
+          setDataAvailable(true);
+          setLoadError("");
+        } else {
+          setDataAvailable(false);
+          setLoadError(caught instanceof Error ? caught.message : "The finance data could not be loaded.");
+        }
       }
     } finally {
       setLoading(false);

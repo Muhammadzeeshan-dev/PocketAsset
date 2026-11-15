@@ -176,7 +176,7 @@ export function SettingsPage({
             style={{ fontSize: "12px", padding: "6px 14px", display: "inline-flex", alignItems: "center", gap: "6px" }}
             onClick={async () => {
               try {
-                const cashAcc = accounts.find((a) => a.name.toLowerCase().includes("cash"));
+                const cashAcc = accounts.find((a) => a.name.toLowerCase().includes("hand") || (a.account_type === "cash" && !a.name.toLowerCase().includes("jazz")));
                 const jazzAcc = accounts.find((a) => a.name.toLowerCase().includes("jazz"));
                 const easyAcc = accounts.find((a) => a.name.toLowerCase().includes("easy"));
 

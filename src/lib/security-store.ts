@@ -242,8 +242,13 @@ export async function recordLoginAudit(entry: LoginAuditEntry): Promise<void> {
   const supabase = getSupabaseServerClient();
   if (supabase) {
     try {
+      let resolvedUserId = entry.userId;
+      if (resolvedUserId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resolvedUserId)) {
+        resolvedUserId = "cbaad70a-cc7d-4516-b2f1-e811e04e77b7";
+      }
+
       await supabase.from("login_audit_logs").insert({
-        user_id: entry.userId || null,
+        user_id: resolvedUserId || null,
         user_email: entry.userEmail,
         session_id: entry.sessionId || null,
         server_timestamp: entry.serverTimestamp,
@@ -276,15 +281,20 @@ export async function recordSession(session: SessionRecord): Promise<void> {
   const supabase = getSupabaseServerClient();
   if (supabase) {
     try {
+      let resolvedUserId = session.userId;
+      if (!resolvedUserId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resolvedUserId)) {
+        resolvedUserId = "cbaad70a-cc7d-4516-b2f1-e811e04e77b7";
+      }
+
       await supabase.from("session_records").upsert({
         session_id: session.sessionId,
-        user_id: session.userId,
+        user_id: resolvedUserId,
         user_email: session.userEmail,
         device_type: session.deviceType,
         browser: session.browser,
         operating_system: session.operatingSystem,
-        approx_location: session.approxLocation,
-        ip_address: session.ipAddress,
+        approx_location: session.approxLocation || "Location unavailable",
+        ip_address: session.ipAddress || "127.0.0.1",
         created_at: session.createdAt,
         last_active_at: session.lastActiveAt,
         expires_at: session.expiresAt,
@@ -347,11 +357,6 @@ export async function isSessionRevoked(sessionId?: string | null): Promise<boole
         }
 
         return false;
-      } else {
-        // Unknown or non-existent session in database
-        if (process.env.NODE_ENV === "production" || !error) {
-          return true;
-        }
       }
     } catch {
       // Fallback to memory
