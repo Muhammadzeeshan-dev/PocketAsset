@@ -11,6 +11,7 @@ export type AppSection =
   | "investments"
   | "assets"
   | "reports"
+  | "zakat"
   | "assistant"
   | "settings"
   | "admin";

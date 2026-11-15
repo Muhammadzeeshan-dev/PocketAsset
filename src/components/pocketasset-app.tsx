@@ -243,6 +243,7 @@ export function PocketAssetApp({ section = "overview" }: { section?: AppSection 
       savings: "Savings Goals & Emergency Fund",
       investments: "PSX Stock Investments",
       assets: "Assets & Net Worth",
+      zakat: "Zakat & Nisab Calculator",
       reports: "Financial Reports",
       assistant: "Deterministic Assistant",
       settings: "User Settings",

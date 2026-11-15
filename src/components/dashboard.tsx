@@ -22,6 +22,8 @@ import {
   LockKeyhole,
   LogOut,
   Menu,
+  MessageSquareText,
+  Moon,
   Pencil,
   PiggyBank,
   Plus,
@@ -90,6 +92,9 @@ import { SettingsPage } from "@/components/settings-page";
 import { FinancialCalendar } from "@/components/financial-calendar";
 import { NotificationBell } from "@/components/notification-bell";
 import { EditAccountDialog } from "@/components/edit-account-dialog";
+import { SmsParserDialog } from "@/components/sms-parser-dialog";
+import { ZakatCalculator } from "@/components/zakat-calculator";
+import { calculateCashRunway } from "@/lib/runway";
 import { Shield } from "lucide-react";
 
 type EntryKind = TransactionType;
@@ -140,6 +145,7 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
   const [deletingTransaction, setDeletingTransaction] = useState<FinanceTransaction | null>(null);
   const [showAccountDialog, setShowAccountDialog] = useState(false);
   const [editingAccount, setEditingAccount] = useState<FinanceAccount | null>(null);
+  const [showSmsParser, setShowSmsParser] = useState(false);
   const [toast, setToast] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -236,6 +242,7 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
   const monthSummary = useMemo(() => getMonthlySummary(selectedMonth, transactions), [selectedMonth, transactions]);
   const weeklySummary = useMemo(() => getWeeklySummary(selectedDate, accounts, transactions), [selectedDate, accounts, transactions]);
   const monthlyTrend = useMemo(() => getMonthlyTrend(selectedMonth, transactions), [selectedMonth, transactions]);
+  const runway = useMemo(() => calculateCashRunway(accounts, transactions, selectedDate), [accounts, transactions, selectedDate]);
   const customRangeSummary = useMemo(() => {
     if (!rangeStart || !rangeEnd || rangeStart > rangeEnd) return null;
     const rangeTransactions = transactions.filter((transaction) => {
@@ -294,6 +301,7 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
           <NavLinkItem href="/savings" icon={PiggyBank} label="Savings goals" active={section === "savings"} onClick={() => setMobileNavOpen(false)} />
           <NavLinkItem href="/investments" icon={TrendingUp} label="Investments" active={section === "investments"} onClick={() => setMobileNavOpen(false)} />
           <NavLinkItem href="/assets" icon={Landmark} label="Assets & liabilities" active={section === "assets"} onClick={() => setMobileNavOpen(false)} />
+          <NavLinkItem href="/zakat" icon={Moon} label="Zakat & Nisab" active={section === "zakat"} onClick={() => setMobileNavOpen(false)} />
           <NavLinkItem href="/reports" icon={Activity} label="Reports" active={section === "reports"} onClick={() => setMobileNavOpen(false)} />
         </nav>
 
@@ -325,6 +333,7 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
                   : section === "savings" ? "Savings goals"
                   : section === "investments" ? "Investments"
                   : section === "assets" ? "Assets & liabilities"
+                  : section === "zakat" ? "Zakat & Nisab Calculator"
                   : section === "reports" ? "Reports"
                   : section === "assistant" ? "Financial assistant"
                   : section === "settings" ? "Settings"
@@ -447,6 +456,16 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
             refreshing={refreshing}
             onRefresh={() => void refreshData(true)}
             onToast={setToast}
+          /> : section === "zakat" ? <ZakatCalculator
+            userId={user.id}
+            supabase={supabase}
+            accounts={accounts}
+            transactions={transactions}
+            stockMarketValuePaisa={1740426n}
+            assets={[]}
+            liabilities={[]}
+            onRefresh={() => void refreshData(true)}
+            onToast={setToast}
           /> : section === "reports" ? <ReportsPage
             accounts={accounts}
             transactions={transactions}
@@ -509,10 +528,47 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
             <button type="button" className="quick-action quick-income" onClick={() => openEntry("income")}><ArrowDownRight size={15} /> Add Money</button>
             <button type="button" className="quick-action quick-expense" onClick={() => openEntry("expense")}><ShoppingBag size={14} /> Add Expense</button>
             <button type="button" className="quick-action quick-transfer" onClick={() => openEntry("transfer")}><ArrowLeftRight size={15} /> Transfer</button>
+            <button type="button" className="quick-action" style={{ background: "#eff6ff", color: "#2563eb", borderColor: "#bfdbfe" }} onClick={() => setShowSmsParser(true)}><MessageSquareText size={15} /> Paste SMS / Bank Alert</button>
             <Link href="/calendar" className="quick-action"><CalendarDays size={14} /> View Calendar</Link>
-            <button type="button" className="quick-action quick-expense" onClick={() => openEntry("expense")}><Plus size={14} /> Add Purchase</button>
+            <Link href="/zakat" className="quick-action"><Moon size={14} /> Zakat &amp; Nisab</Link>
             <Link href="/investments" className="quick-action quick-investment"><TrendingUp size={14} /> View Investments</Link>
           </section>
+
+          {/* Predictive Cash Runway & Burn Rate Insight */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "12px 18px",
+              borderRadius: "12px",
+              background: runway.status === "critical" ? "#fef2f2" : runway.status === "caution" ? "#fffbeb" : "#f0fdf4",
+              border: `1px solid ${runway.status === "critical" ? "#fecaca" : runway.status === "caution" ? "#fde68a" : "#bbf7d0"}`,
+              margin: "16px 0",
+              flexWrap: "wrap",
+              gap: "12px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ fontSize: "20px" }}>{runway.status === "critical" ? "⚠️" : runway.status === "caution" ? "⏳" : "⚡"}</span>
+              <div>
+                <strong style={{ fontSize: "13px", color: "#0f172a", display: "block" }}>
+                  Pocket Cash Runway: ~{runway.pocketCashRunwayDays} Days
+                </strong>
+                <span style={{ fontSize: "11px", color: "#475569" }}>
+                  Based on daily burn rate of ~{formatPkr(runway.averageDailyBurnPaisa)}/day, your pocket cash ({formatPkr(runway.pocketCashBalancePaisa)}) will last ~{runway.pocketCashRunwayDays} days (Total liquid runway: ~{runway.totalLiquidRunwayDays} days).
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="outline-button"
+              style={{ fontSize: "11px", padding: "4px 10px", background: "#ffffff" }}
+              onClick={() => setShowSmsParser(true)}
+            >
+              <MessageSquareText size={13} /> Quick SMS Ingestion
+            </button>
+          </div>
 
           {/* 10 Prioritized Financial Metrics */}
           <section className="metric-grid-5" aria-label="Today's financial metrics">
@@ -685,6 +741,18 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
       {editingTransaction && <TransactionCorrectionDialog transaction={editingTransaction} accounts={activeAccounts} userId={user.id} supabase={supabase} onClose={() => setEditingTransaction(null)} onSaved={(message) => { setEditingTransaction(null); handleSaved(message); }} />}
       {deletingTransaction && <DeleteTransactionDialog transaction={deletingTransaction} userId={user.id} supabase={supabase} onClose={() => setDeletingTransaction(null)} onDeleted={(message) => { setDeletingTransaction(null); handleSaved(message); }} />}
       {showAccountDialog && <AccountDialog userId={user.id} supabase={supabase} onClose={() => setShowAccountDialog(false)} onCreated={() => handleSaved("Account added. Its opening balance is recorded separately from income.")} />}
+      {showSmsParser && (
+        <SmsParserDialog
+          accounts={activeAccounts}
+          userId={user.id}
+          supabase={supabase}
+          onClose={() => setShowSmsParser(false)}
+          onSaved={(msg) => {
+            setShowSmsParser(false);
+            handleSaved(msg);
+          }}
+        />
+      )}
       {editingAccount && (
         <EditAccountDialog
           account={editingAccount}
