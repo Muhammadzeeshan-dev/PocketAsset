@@ -355,8 +355,8 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
           <div className="topbar-left">
             <button type="button" className="icon-button mobile-menu-button" aria-label="Open navigation" onClick={() => setMobileNavOpen(true)}><Menu size={19} /></button>
             <div className="breadcrumbs">
-              <span>Workspace</span>
-              <span className="crumb-divider">/</span>
+              <span className="hide-on-mobile">Workspace</span>
+              <span className="crumb-divider hide-on-mobile">/</span>
               <strong>
                 {section === "daily" ? "Daily money"
                   : section === "calendar" ? "Financial calendar"
@@ -390,21 +390,21 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
             </button>
             <button
               type="button"
-              className="outline-button"
+              className="outline-button topbar-text-btn"
               style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "11px", padding: "4px 9px" }}
               onClick={() => setShowBiometrics(true)}
               title="Windows Hello / Touch ID / Face ID Biometric Security"
             >
-              <Fingerprint size={13} color="#2563eb" /> Biometrics
+              <Fingerprint size={13} color="#2563eb" /> <span className="hide-on-mobile">Biometrics</span>
             </button>
             <button
               type="button"
-              className="outline-button"
+              className="outline-button topbar-text-btn"
               style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "11px", padding: "4px 9px", background: "#fdf4ff", color: "#9333ea", borderColor: "#f0abfc" }}
               onClick={() => setShowReceiptScanner(true)}
               title="Scan supermarket receipts, fuel slips or utility bills"
             >
-              <ScanLine size={13} /> Scan Bill
+              <ScanLine size={13} /> <span className="hide-on-mobile">Scan Bill</span>
             </button>
             <NotificationBell />
             {offline && <span className="offline-pill"><span />Offline mode</span>}
@@ -813,6 +813,52 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
           </>}
         </div>
       </main>
+
+      {/* Modern Fixed Mobile Bottom Navigation Bar */}
+      <nav className="mobile-bottom-bar" aria-label="Mobile Navigation">
+        <Link
+          href="/"
+          className={`mobile-bar-item ${section === "overview" ? "active" : ""}`}
+          onClick={() => setMobileNavOpen(false)}
+        >
+          <LayoutDashboard size={19} />
+          <span>Home</span>
+        </Link>
+        <Link
+          href="/daily"
+          className={`mobile-bar-item ${section === "daily" ? "active" : ""}`}
+          onClick={() => setMobileNavOpen(false)}
+        >
+          <CalendarDays size={19} />
+          <span>Daily</span>
+        </Link>
+        <button
+          type="button"
+          className="mobile-bar-fab"
+          onClick={() => openEntry("expense")}
+          aria-label="Add transaction"
+          title="Add Expense"
+        >
+          <Plus size={22} color="#ffffff" />
+        </button>
+        <Link
+          href="/reports"
+          className={`mobile-bar-item ${section === "reports" ? "active" : ""}`}
+          onClick={() => setMobileNavOpen(false)}
+        >
+          <Activity size={19} />
+          <span>Reports</span>
+        </Link>
+        <button
+          type="button"
+          className={`mobile-bar-item ${mobileNavOpen ? "active" : ""}`}
+          onClick={() => setMobileNavOpen(!mobileNavOpen)}
+          aria-label="Toggle navigation drawer"
+        >
+          <Menu size={19} />
+          <span>Menu</span>
+        </button>
+      </nav>
 
       {activeEntry && <QuickEntryDialog key={activeEntry + (entryPreset?.description ?? "")} kind={activeEntry} initialPreset={entryPreset} accounts={activeAccounts} userId={user.id} selectedDate={selectedDate} supabase={supabase} onClose={() => { setActiveEntry(null); setEntryPreset(null); }} onSaved={handleSaved} onCreateAccount={() => { setActiveEntry(null); setEntryPreset(null); setShowAccountDialog(true); }} />}
       {editingTransaction && <TransactionCorrectionDialog transaction={editingTransaction} accounts={activeAccounts} userId={user.id} supabase={supabase} onClose={() => setEditingTransaction(null)} onSaved={(message) => { setEditingTransaction(null); handleSaved(message); }} />}
