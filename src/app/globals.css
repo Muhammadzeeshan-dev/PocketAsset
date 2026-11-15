@@ -1544,15 +1544,130 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   gap: 16px;
   margin-bottom: 24px;
 }
+.report-kpi-grid-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+@media (max-width: 1300px) {
+  .report-kpi-grid-5 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
 @media (max-width: 1100px) {
   .report-kpi-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .report-kpi-grid-5 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 @media (max-width: 580px) {
-  .report-kpi-grid {
+  .report-kpi-grid,
+  .report-kpi-grid-5 {
     grid-template-columns: 1fr;
   }
+}
+
+/* Period Navigation Toolbar */
+.report-period-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 18px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.period-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.period-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.period-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.period-step-btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.period-step-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+.period-date-input,
+.period-select {
+  height: 32px;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.period-today-btn {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.period-today-btn:hover {
+  background: #dbeafe;
+}
+.period-audit-tag {
+  font-size: 12px;
+  font-weight: 600;
+  color: #10b981;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.period-range-display {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  padding: 4px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+.fbr-compliance-chip {
+  font-size: 12px;
+  font-weight: 700;
+  color: #15803d;
+  background: #ecfdf5;
+  border: 1px solid #bbf7d0;
+  padding: 6px 14px;
+  border-radius: 8px;
 }
 
 .report-kpi-card {
@@ -1660,17 +1775,21 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .app-sidebar,
   .heading-actions,
   .report-frequency-bar,
+  .report-period-toolbar,
   .modal-backdrop,
   .notification-bell-btn {
     display: none !important;
   }
-  .app-main {
+  .app-main,
+  .main-area,
+  .reports-analytics-page {
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
   }
-  .report-kpi-grid {
-    grid-template-columns: repeat(4, 1fr) !important;
+  .report-kpi-grid,
+  .report-kpi-grid-5 {
+    grid-template-columns: repeat(5, 1fr) !important;
     gap: 8px !important;
   }
   .report-kpi-card {

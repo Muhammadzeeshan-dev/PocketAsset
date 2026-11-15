@@ -253,10 +253,18 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
     const income = rangeTransactions.reduce((total, transaction) => transaction.transaction_type === "income" || transaction.transaction_type === "dividend"
       ? total + BigInt(transaction.amount_paisa)
       : total, 0n);
+    const otherInflows = rangeTransactions.reduce((total, transaction) => transaction.transaction_type === "refund" || transaction.transaction_type === "investment_sale"
+      ? total + BigInt(transaction.amount_paisa)
+      : total, 0n);
     const expenses = rangeTransactions.reduce((total, transaction) => transaction.transaction_type === "expense"
       ? total + BigInt(transaction.amount_paisa)
       : total, 0n);
-    return { income, expenses, savings: income - expenses, count: rangeTransactions.length };
+    const adjustments = rangeTransactions.reduce((total, transaction) => {
+      if (transaction.transaction_type !== "adjustment") return total;
+      const amt = BigInt(transaction.amount_paisa);
+      return total + (transaction.direction === "inflow" ? amt : -amt);
+    }, 0n);
+    return { income, expenses, savings: income + otherInflows - expenses + adjustments, count: rangeTransactions.length };
   }, [rangeStart, rangeEnd, transactions]);
   const selectedDayTransactions = useMemo(() => transactions
     .filter((transaction) => getPakistanDateKey(transaction.occurred_at) === selectedDate && !transaction.deleted_at)
@@ -470,6 +478,7 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
             accounts={accounts}
             transactions={transactions}
             selectedDate={selectedDate}
+            onDateChange={setSelectedDate}
             dataAvailable={dataAvailable}
             refreshing={refreshing}
             onRefresh={() => void refreshData(true)}
@@ -845,7 +854,8 @@ function EmptyActivity({ onAdd }: { onAdd: () => void }) {
 }
 
 function ActivityRow({ transaction }: { transaction: FinanceTransaction }) {
-  const isIncoming = transaction.transaction_type === "income" || transaction.transaction_type === "refund" || transaction.transaction_type === "dividend" || transaction.transaction_type === "investment_sale";
+  const isAdjustmentInflow = transaction.transaction_type === "adjustment" && transaction.direction === "inflow";
+  const isIncoming = transaction.transaction_type === "income" || transaction.transaction_type === "refund" || transaction.transaction_type === "dividend" || transaction.transaction_type === "investment_sale" || isAdjustmentInflow;
   const isTransfer = transaction.transaction_type === "transfer";
   const isInvestment = transaction.transaction_type === "investment_purchase" || transaction.transaction_type === "investment_sale";
   const Icon = isTransfer ? ArrowLeftRight : isInvestment ? TrendingUp : isIncoming ? ArrowUpRight : ShoppingBag;
@@ -1556,7 +1566,8 @@ function DailyTransactionRow({ transaction, accounts, onEdit, onDelete }: {
 }) {
   const source = accounts.find((account) => account.id === transaction.account_id)?.name ?? "Unknown account";
   const destination = transaction.transfer_to_account_id ? accounts.find((account) => account.id === transaction.transfer_to_account_id)?.name : null;
-  const incoming = transaction.transaction_type === "income" || transaction.transaction_type === "refund" || transaction.transaction_type === "dividend" || transaction.transaction_type === "investment_sale";
+  const isAdjIn = transaction.transaction_type === "adjustment" && transaction.direction === "inflow";
+  const incoming = transaction.transaction_type === "income" || transaction.transaction_type === "refund" || transaction.transaction_type === "dividend" || transaction.transaction_type === "investment_sale" || isAdjIn;
   const amountPrefix = transaction.transaction_type === "transfer" ? "" : incoming ? "+" : "−";
   const time = new Intl.DateTimeFormat("en-PK", { hour: "numeric", minute: "2-digit", timeZone: "Asia/Karachi" }).format(new Date(transaction.occurred_at));
   return <tr>

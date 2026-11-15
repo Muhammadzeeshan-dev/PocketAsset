@@ -59,6 +59,8 @@ export interface DaySummary {
   transfers: bigint;
   investmentPurchases: bigint;
   adjustmentsNet: bigint;
+  adjustmentsInflow: bigint;
+  adjustmentsOutflow: bigint;
   totalAvailable: bigint;
   closingBalance: bigint;
   dailySavings: bigint;
@@ -73,6 +75,12 @@ export interface MonthlySummary {
   income: bigint;
   expenses: bigint;
   savings: bigint;
+  otherInflows: bigint;
+  adjustmentsNet: bigint;
+  adjustmentsInflow: bigint;
+  adjustmentsOutflow: bigint;
+  totalInflows: bigint;
+  totalOutflows: bigint;
   expenseCategories: Array<{ category: string; amount: bigint }>;
 }
 
@@ -208,10 +216,25 @@ export function getDaySummary(
   const investmentPurchases = sumTypes(transactions, dateKey, new Set(["investment_purchase"]));
   const transfers = sumTypes(transactions, dateKey, new Set(["transfer"]));
 
+  const adjustmentsInflow = dayTransactions.reduce((total, transaction) => {
+    if (transaction.transaction_type === "adjustment" && transaction.direction === "inflow") {
+      return total + toPaisa(transaction.amount_paisa);
+    }
+    return total;
+  }, 0n);
+
+  const adjustmentsOutflow = dayTransactions.reduce((total, transaction) => {
+    if (transaction.transaction_type === "adjustment" && transaction.direction === "outflow") {
+      return total + toPaisa(transaction.amount_paisa);
+    }
+    return total;
+  }, 0n);
+
+  const adjustmentsNet = adjustmentsInflow - adjustmentsOutflow;
   const totalInflows = received + otherInflows;
   const totalOutflows = expenses + investmentPurchases;
-  const totalAvailable = openingBalance + totalInflows;
-  const dailySavings = totalInflows - totalOutflows;
+  const totalAvailable = openingBalance + totalInflows + adjustmentsInflow;
+  const dailySavings = totalInflows - totalOutflows + adjustmentsNet;
 
   return {
     date: dateKey,
@@ -222,11 +245,9 @@ export function getDaySummary(
     expenses,
     transfers,
     investmentPurchases,
-    adjustmentsNet: dayTransactions.reduce((total, transaction) => {
-      if (transaction.transaction_type !== "adjustment") return total;
-      const amount = toPaisa(transaction.amount_paisa);
-      return total + (transaction.direction === "inflow" ? amount : -amount);
-    }, 0n),
+    adjustmentsNet,
+    adjustmentsInflow,
+    adjustmentsOutflow,
     totalAvailable,
     closingBalance,
     dailySavings,
@@ -259,9 +280,35 @@ export function getMonthlySummary(monthKey: string, transactions: FinanceTransac
     }
     return total;
   }, 0n);
+  const otherInflows = inMonth.reduce((total, transaction) => {
+    if (transaction.transaction_type === "refund" || transaction.transaction_type === "investment_sale") {
+      return total + toPaisa(transaction.amount_paisa);
+    }
+    return total;
+  }, 0n);
   const expenses = inMonth.reduce((total, transaction) => transaction.transaction_type === "expense"
     ? total + toPaisa(transaction.amount_paisa)
     : total, 0n);
+
+  const adjustmentsInflow = inMonth.reduce((total, transaction) => {
+    if (transaction.transaction_type === "adjustment" && transaction.direction === "inflow") {
+      return total + toPaisa(transaction.amount_paisa);
+    }
+    return total;
+  }, 0n);
+
+  const adjustmentsOutflow = inMonth.reduce((total, transaction) => {
+    if (transaction.transaction_type === "adjustment" && transaction.direction === "outflow") {
+      return total + toPaisa(transaction.amount_paisa);
+    }
+    return total;
+  }, 0n);
+
+  const adjustmentsNet = adjustmentsInflow - adjustmentsOutflow;
+  const totalInflows = income + otherInflows + adjustmentsInflow;
+  const totalOutflows = expenses + adjustmentsOutflow;
+  const savings = totalInflows - totalOutflows;
+
   const categories = new Map<string, bigint>();
   for (const transaction of inMonth) {
     if (transaction.transaction_type !== "expense") continue;
@@ -272,7 +319,18 @@ export function getMonthlySummary(monthKey: string, transactions: FinanceTransac
     .map(([category, amount]) => ({ category, amount }))
     .sort((left, right) => left.amount > right.amount ? -1 : left.amount < right.amount ? 1 : 0);
 
-  return { income, expenses, savings: income - expenses, expenseCategories };
+  return {
+    income,
+    expenses,
+    savings,
+    otherInflows,
+    adjustmentsNet,
+    adjustmentsInflow,
+    adjustmentsOutflow,
+    totalInflows,
+    totalOutflows,
+    expenseCategories,
+  };
 }
 
 export function getMonthlyTrend(

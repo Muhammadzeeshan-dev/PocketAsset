@@ -17,12 +17,18 @@ export interface YearlySummary {
   totalIncomePaisa: bigint;
   totalExpensesPaisa: bigint;
   totalSavingsPaisa: bigint;
+  totalAdjustmentsPaisa: bigint;
+  totalInflowsPaisa: bigint;
+  totalOutflowsPaisa: bigint;
   monthlyBreakdown: Array<{
     month: string;
     monthName: string;
     incomePaisa: bigint;
     expensesPaisa: bigint;
     savingsPaisa: bigint;
+    adjustmentsPaisa: bigint;
+    totalInflowsPaisa: bigint;
+    totalOutflowsPaisa: bigint;
   }>;
   categoryBreakdown: Array<{ category: string; amountPaisa: bigint; percentage: number }>;
 }
@@ -31,6 +37,9 @@ export function getYearlySummary(year: string, transactions: FinanceTransaction[
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   let totalIncome = 0n;
   let totalExpenses = 0n;
+  let totalAdjustments = 0n;
+  let totalInflows = 0n;
+  let totalOutflows = 0n;
 
   const monthlyBreakdown = months.map((monthName, idx) => {
     const monthNum = String(idx + 1).padStart(2, "0");
@@ -38,6 +47,9 @@ export function getYearlySummary(year: string, transactions: FinanceTransaction[
     const summary = getMonthlySummary(monthKey, transactions);
     totalIncome += summary.income;
     totalExpenses += summary.expenses;
+    totalAdjustments += summary.adjustmentsNet;
+    totalInflows += summary.totalInflows;
+    totalOutflows += summary.totalOutflows;
 
     return {
       month: monthKey,
@@ -45,6 +57,9 @@ export function getYearlySummary(year: string, transactions: FinanceTransaction[
       incomePaisa: summary.income,
       expensesPaisa: summary.expenses,
       savingsPaisa: summary.savings,
+      adjustmentsPaisa: summary.adjustmentsNet,
+      totalInflowsPaisa: summary.totalInflows,
+      totalOutflowsPaisa: summary.totalOutflows,
     };
   });
 
@@ -69,7 +84,10 @@ export function getYearlySummary(year: string, transactions: FinanceTransaction[
     year,
     totalIncomePaisa: totalIncome,
     totalExpensesPaisa: totalExpenses,
-    totalSavingsPaisa: totalIncome - totalExpenses,
+    totalSavingsPaisa: totalInflows - totalOutflows,
+    totalAdjustmentsPaisa: totalAdjustments,
+    totalInflowsPaisa: totalInflows,
+    totalOutflowsPaisa: totalOutflows,
     monthlyBreakdown,
     categoryBreakdown,
   };

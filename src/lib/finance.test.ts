@@ -185,4 +185,75 @@ describe("PocketAsset ledger calculations", () => {
     expect(mon.expenses).toBe(45000n);
     expect(mon.closingBalance).toBe(967900n); // Rs. 9,679
   });
+
+  it("ensures DaySummary and MonthlySummary accurately update and balance when adjustments/mistakes are corrected", () => {
+    const realAccounts: FinanceAccount[] = [
+      { id: "cash", name: "Cash", account_type: "cash", opening_balance_paisa: 400000n, currency: "PKR", is_active: true },
+      { id: "jazz", name: "JazzCash", account_type: "wallet", opening_balance_paisa: 321000n, currency: "PKR", is_active: true },
+      { id: "easy", name: "Easypaisa", account_type: "wallet", opening_balance_paisa: 159900n, currency: "PKR", is_active: true },
+    ];
+
+    // User adds an adjustment on Cash (+Rs 500) and an outflow adjustment on JazzCash (-Rs 210)
+    const testTx: FinanceTransaction[] = [
+      {
+        id: "adj-1",
+        account_id: "cash",
+        transfer_to_account_id: null,
+        transaction_type: "adjustment",
+        amount_paisa: 50000n, // +Rs. 500
+        direction: "inflow",
+        occurred_at: "2026-11-15T10:00:00Z",
+        category: "Adjustment",
+        description: "Reconcile cash count",
+      },
+      {
+        id: "adj-2",
+        account_id: "jazz",
+        transfer_to_account_id: null,
+        transaction_type: "adjustment",
+        amount_paisa: 21000n, // -Rs. 210
+        direction: "outflow",
+        occurred_at: "2026-11-15T11:00:00Z",
+        category: "Adjustment",
+        description: "Corrected fee",
+      },
+      {
+        id: "exp-1",
+        account_id: "easy",
+        transfer_to_account_id: null,
+        transaction_type: "expense",
+        amount_paisa: 9900n, // -Rs. 99
+        direction: "outflow",
+        occurred_at: "2026-11-15T12:00:00Z",
+        category: "Mobile Load",
+        description: "Mobile package",
+      },
+    ];
+
+    const day = getDaySummary("2026-11-15", realAccounts, testTx);
+    // Opening balance = 400,000 + 321,000 + 159,900 = 880,900 (Rs. 8,809)
+    expect(day.openingBalance).toBe(880900n);
+    expect(day.adjustmentsInflow).toBe(50000n);
+    expect(day.adjustmentsOutflow).toBe(21000n);
+    expect(day.adjustmentsNet).toBe(29000n); // +Rs. 290
+    expect(day.expenses).toBe(9900n); // Rs. 99
+    // Closing = 880,900 + 29,000 - 9,900 = 900,000 (Rs. 9,000.00)
+    expect(day.closingBalance).toBe(900000n);
+
+    // Audit Equation: opening + received + otherInflows - (expenses + investmentPurchases) + adjustmentsNet === closing
+    const auditEquationCheck =
+      day.openingBalance +
+      day.received +
+      day.otherInflows -
+      (day.expenses + day.investmentPurchases) +
+      day.adjustmentsNet;
+    expect(auditEquationCheck).toBe(day.closingBalance);
+
+    // Monthly summary verification
+    const month = getMonthlySummary("2026-11", testTx);
+    expect(month.adjustmentsNet).toBe(29000n);
+    expect(month.totalInflows).toBe(50000n);
+    expect(month.totalOutflows).toBe(30900n); // 9,900 exp + 21,000 adj outflow
+    expect(month.savings).toBe(19100n); // 50,000 - 30,900 = 19,100 (+Rs. 191)
+  });
 });

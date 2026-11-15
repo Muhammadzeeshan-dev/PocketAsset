@@ -41,7 +41,51 @@ describe("Reports & Analytics Suite", () => {
     expect(yearly.categoryBreakdown[0].percentage).toBe(100);
   });
 
-  it("exports valid CSV ledger format", () => {
+  it("updates monthly and yearly summaries when balance adjustments and corrections are added", () => {
+    const transactionsWithAdjustment: FinanceTransaction[] = [
+      ...transactions,
+      {
+        id: "tx3-adj-in",
+        account_id: "a1",
+        transfer_to_account_id: null,
+        transaction_type: "adjustment",
+        amount_paisa: 400000n, // +Rs. 4,000 cash correction
+        direction: "inflow",
+        occurred_at: "2026-11-10T12:00:00Z",
+        category: "Adjustment",
+        description: "Cash audit correction",
+      },
+      {
+        id: "tx4-adj-out",
+        account_id: "a1",
+        transfer_to_account_id: null,
+        transaction_type: "adjustment",
+        amount_paisa: 50000n, // -Rs. 500 correction
+        direction: "outflow",
+        occurred_at: "2026-11-12T12:00:00Z",
+        category: "Adjustment",
+        description: "Correction of forgotten petty spend",
+      },
+    ];
+
+    const yearly = getYearlySummary("2026", transactionsWithAdjustment);
+    // Net adjustment = +400,000 - 50,000 = +350,000
+    expect(yearly.totalAdjustmentsPaisa).toBe(350000n);
+    // Total Inflows = 5,000,000 + 400,000 = 5,400,000
+    expect(yearly.totalInflowsPaisa).toBe(5400000n);
+    // Total Outflows = 1,500,000 + 50,000 = 1,550,000
+    expect(yearly.totalOutflowsPaisa).toBe(1550000n);
+    // Savings = 5,400,000 - 1,550,000 = 3,850,000
+    expect(yearly.totalSavingsPaisa).toBe(3850000n);
+
+    // Verify November monthly breakdown reflects the adjustments
+    const nov = yearly.monthlyBreakdown.find((m) => m.month === "2026-11");
+    expect(nov).toBeDefined();
+    expect(nov?.adjustmentsPaisa).toBe(350000n);
+    expect(nov?.savingsPaisa).toBe(3850000n);
+  });
+
+  it("exports valid CSV ledger format including adjustments", () => {
     const csv = generateCsvExport(transactions, accounts);
     expect(csv).toContain("Date & Time,Type,Account");
     expect(csv).toContain("Cash in hand");
