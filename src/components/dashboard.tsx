@@ -16,6 +16,9 @@ import {
   CircleDollarSign,
   Clock3,
   CreditCard,
+  FileSpreadsheet,
+  Flame,
+  HeartPulse,
   Home,
   LayoutDashboard,
   Landmark,
@@ -37,6 +40,7 @@ import {
   TrendingDown,
   TrendingUp,
   Trash2,
+  Users,
   Wallet,
   WalletCards,
   X,
@@ -98,6 +102,10 @@ import { ZakatCalculator } from "@/components/zakat-calculator";
 import { ReceiptScannerDialog } from "@/components/receipt-scanner-dialog";
 import { ForexBullionWidget } from "@/components/forex-bullion-widget";
 import { PredictiveForecastWidget } from "@/components/predictive-forecast";
+import { WealthDoctorModal } from "@/components/wealth-doctor-modal";
+import { TaxOptimizerModal } from "@/components/tax-optimizer-modal";
+import { BillSplitterModal } from "@/components/bill-splitter-modal";
+import { FireCalculatorWidget } from "@/components/fire-calculator-widget";
 import { calculateCashRunway } from "@/lib/runway";
 import { Shield } from "lucide-react";
 
@@ -151,6 +159,9 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
   const [editingAccount, setEditingAccount] = useState<FinanceAccount | null>(null);
   const [showSmsParser, setShowSmsParser] = useState(false);
   const [showReceiptScanner, setShowReceiptScanner] = useState(false);
+  const [showWealthDoctor, setShowWealthDoctor] = useState(false);
+  const [showTaxOptimizer, setShowTaxOptimizer] = useState(false);
+  const [showBillSplitter, setShowBillSplitter] = useState(false);
   const [toast, setToast] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -359,6 +370,24 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
             <button
               type="button"
               className="outline-button"
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "11px", padding: "5px 12px", background: "#ecfdf5", color: "#059669", borderColor: "#a7f3d0" }}
+              onClick={() => setShowWealthDoctor(true)}
+              title="AI Wealth Doctor & Financial Health Radar"
+            >
+              <HeartPulse size={13} /> Wealth Doctor
+            </button>
+            <button
+              type="button"
+              className="outline-button"
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "11px", padding: "5px 12px", background: "#f0fdf4", color: "#16a34a", borderColor: "#bbf7d0" }}
+              onClick={() => setShowTaxOptimizer(true)}
+              title="FBR Withholding Tax Refund Reclaimer"
+            >
+              <FileSpreadsheet size={13} /> WHT Refund
+            </button>
+            <button
+              type="button"
+              className="outline-button"
               style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "11px", padding: "5px 12px", background: "#fdf4ff", color: "#9333ea", borderColor: "#f0abfc" }}
               onClick={() => setShowReceiptScanner(true)}
               title="Scan supermarket receipts, fuel slips or utility bills"
@@ -551,8 +580,11 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
             <button type="button" className="quick-action quick-income" onClick={() => openEntry("income")}><ArrowDownRight size={15} /> Add Money</button>
             <button type="button" className="quick-action quick-expense" onClick={() => openEntry("expense")}><ShoppingBag size={14} /> Add Expense</button>
             <button type="button" className="quick-action quick-transfer" onClick={() => openEntry("transfer")}><ArrowLeftRight size={15} /> Transfer</button>
-            <button type="button" className="quick-action" style={{ background: "#fdf4ff", color: "#9333ea", borderColor: "#f0abfc" }} onClick={() => setShowReceiptScanner(true)}><ScanLine size={15} /> Scan Bill / Receipt</button>
-            <button type="button" className="quick-action" style={{ background: "#eff6ff", color: "#2563eb", borderColor: "#bfdbfe" }} onClick={() => setShowSmsParser(true)}><MessageSquareText size={15} /> Paste SMS / Bank Alert</button>
+            <button type="button" className="quick-action" style={{ background: "#ecfdf5", color: "#059669", borderColor: "#a7f3d0" }} onClick={() => setShowWealthDoctor(true)}><HeartPulse size={15} /> AI Wealth Doctor</button>
+            <button type="button" className="quick-action" style={{ background: "#f0fdf4", color: "#16a34a", borderColor: "#bbf7d0" }} onClick={() => setShowTaxOptimizer(true)}><FileSpreadsheet size={15} /> FBR WHT Refund</button>
+            <button type="button" className="quick-action" style={{ background: "#eff6ff", color: "#2563eb", borderColor: "#bfdbfe" }} onClick={() => setShowBillSplitter(true)}><Users size={15} /> Split Bill</button>
+            <button type="button" className="quick-action" style={{ background: "#fdf4ff", color: "#9333ea", borderColor: "#f0abfc" }} onClick={() => setShowReceiptScanner(true)}><ScanLine size={15} /> Scan Bill</button>
+            <button type="button" className="quick-action" style={{ background: "#f8fafc", color: "#3b82f6", borderColor: "#cbd5e1" }} onClick={() => setShowSmsParser(true)}><MessageSquareText size={15} /> Paste SMS</button>
             <Link href="/calendar" className="quick-action"><CalendarDays size={14} /> View Calendar</Link>
             <Link href="/zakat" className="quick-action"><Moon size={14} /> Zakat &amp; Nisab</Link>
             <Link href="/investments" className="quick-action quick-investment"><TrendingUp size={14} /> View Investments</Link>
@@ -717,6 +749,13 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
           {/* Pakistan Saraf Bullion & Multi-Currency Hedge Terminal */}
           <ForexBullionWidget totalLiquidPaisa={accountTotal} />
 
+          {/* Milestone Compound Wealth Simulator & FIRE Calculator */}
+          <FireCalculatorWidget
+            currentNetWorthPaisa={accountTotal + 1740426n}
+            defaultMonthlySavingsPaisa={500000n}
+            annualExpensesPaisa={monthSummary.expenses * 12n}
+          />
+
           <section className="dashboard-grid lower-grid">
             <article className="panel accounts-panel">
               <div className="panel-heading">
@@ -797,6 +836,24 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
             setShowReceiptScanner(false);
             handleSaved(msg);
           }}
+        />
+      )}
+      {showWealthDoctor && (
+        <WealthDoctorModal
+          accounts={activeAccounts}
+          transactions={transactions}
+          onClose={() => setShowWealthDoctor(false)}
+        />
+      )}
+      {showTaxOptimizer && (
+        <TaxOptimizerModal
+          transactions={transactions}
+          onClose={() => setShowTaxOptimizer(false)}
+        />
+      )}
+      {showBillSplitter && (
+        <BillSplitterModal
+          onClose={() => setShowBillSplitter(false)}
         />
       )}
       {editingAccount && (
