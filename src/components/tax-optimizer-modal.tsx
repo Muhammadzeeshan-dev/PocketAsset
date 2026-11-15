@@ -63,7 +63,7 @@ function ModalShell({
         role="dialog"
         aria-modal="true"
         aria-labelledby="tax-dialog-title"
-        style={{ maxWidth: "760px" }}
+        style={{ maxWidth: "680px", maxHeight: "min(92vh, 820px)" }}
       >
         <div className="dialog-heading">
           <div>

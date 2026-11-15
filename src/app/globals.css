@@ -126,7 +126,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .range-result { display: flex; flex: 1; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px 13px; color: #8a96a6; font-size: 9px; }
 .range-result strong { color: #44566c; font-size: 9px; font-weight: 650; }
 .range-error { padding-bottom: 8px; color: #b55f64; font-size: 9px; }
-.quick-actions { display: flex; align-items: center; gap: 7px; margin: -5px 0 14px; }
+.quick-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: -5px 0 14px; width: 100%; max-width: 100%; }
 .quick-actions-label { margin-right: 3px; color: #8491a2; font-size: 9px; font-weight: 650; }
 .quick-action { display: inline-flex; min-height: 29px; align-items: center; gap: 6px; padding: 0 9px; border: 1px solid #e7edf4; border-radius: 7px; color: #63758a; background: #fff; font-size: 9px; font-weight: 610; cursor: pointer; transition: border .15s, background .15s, color .15s; }
 .quick-action:hover { border-color: #cbdcf4; color: #2a62b7; background: #f8fbff; }
@@ -727,7 +727,27 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .modal-open { overflow: hidden; }
 .modal-backdrop { position: fixed; inset: 0; z-index: 70; display: grid; overflow-y: auto; place-items: center; padding: 20px; background: rgba(18, 33, 53, .38); backdrop-filter: blur(3px); animation: backdrop-in .15s ease-out; }
 @keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
-.dialog-card { width: min(100%, 500px); overflow: hidden; border: 1px solid rgba(255, 255, 255, .75); border-radius: 15px; background: #fff; box-shadow: 0 24px 70px rgba(17, 35, 58, .24); animation: dialog-in .17s ease-out; }
+.dialog-card {
+  width: min(100%, 540px);
+  max-height: min(92vh, 840px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .75);
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(17, 35, 58, .24);
+  animation: dialog-in .17s ease-out;
+}
+.dialog-heading {
+  flex: 0 0 auto;
+}
+.dialog-scroll-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+  overscroll-behavior: contain;
+}
 @keyframes dialog-in { from { opacity: .75; transform: translateY(8px) scale(.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
 .dialog-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 20px 22px 17px; border-bottom: 1px solid #eef1f5; }
 .dialog-heading .panel-kicker { margin-bottom: 6px; }

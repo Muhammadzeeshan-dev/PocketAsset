@@ -62,7 +62,7 @@ function ModalShell({
         role="dialog"
         aria-modal="true"
         aria-labelledby="splitter-dialog-title"
-        style={{ maxWidth: "680px" }}
+        style={{ maxWidth: "640px", maxHeight: "min(92vh, 820px)" }}
       >
         <div className="dialog-heading">
           <div>

@@ -16,7 +16,10 @@ import {
   CircleDollarSign,
   Clock3,
   CreditCard,
+  Eye,
+  EyeOff,
   FileSpreadsheet,
+  Fingerprint,
   Flame,
   HeartPulse,
   Home,
@@ -106,6 +109,8 @@ import { WealthDoctorModal } from "@/components/wealth-doctor-modal";
 import { TaxOptimizerModal } from "@/components/tax-optimizer-modal";
 import { BillSplitterModal } from "@/components/bill-splitter-modal";
 import { FireCalculatorWidget } from "@/components/fire-calculator-widget";
+import { BiometricAuthModal } from "@/components/biometric-auth-modal";
+import { IntelligenceHub } from "@/components/intelligence-hub";
 import { calculateCashRunway } from "@/lib/runway";
 import { Shield } from "lucide-react";
 
@@ -162,6 +167,8 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
   const [showWealthDoctor, setShowWealthDoctor] = useState(false);
   const [showTaxOptimizer, setShowTaxOptimizer] = useState(false);
   const [showBillSplitter, setShowBillSplitter] = useState(false);
+  const [showBiometrics, setShowBiometrics] = useState(false);
+  const [hideBalances, setHideBalances] = useState(false);
   const [toast, setToast] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -287,7 +294,11 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
     .sort((left, right) => right.occurred_at.localeCompare(left.occurred_at)), [transactions, selectedDate]);
   const hasWeekActivity = weeklySummary.some((day) => day.transactionCount > 0);
   const hasMonthActivity = monthlyTrend.some((month) => month.income > 0n || month.expenses > 0n);
-  const displayMoney = (value: bigint) => dataAvailable ? formatPkr(value) : "—";
+  const displayMoney = (value: bigint) => {
+    if (!dataAvailable) return "—";
+    if (hideBalances) return "••••••";
+    return formatPkr(value);
+  };
   const greetingName = user.email?.split("@")[0] || "there";
 
   async function signOut() {
@@ -369,26 +380,27 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
           <div className="topbar-actions">
             <button
               type="button"
-              className="outline-button"
-              style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "11px", padding: "5px 12px", background: "#ecfdf5", color: "#059669", borderColor: "#a7f3d0" }}
-              onClick={() => setShowWealthDoctor(true)}
-              title="AI Wealth Doctor & Financial Health Radar"
+              className="icon-button"
+              onClick={() => setHideBalances(!hideBalances)}
+              title={hideBalances ? "Privacy Shield Active (Click to Show Balances)" : "Privacy Shield: Hide Balances"}
+              style={{ width: "30px", height: "30px" }}
+              aria-label="Toggle Privacy Shield"
             >
-              <HeartPulse size={13} /> Wealth Doctor
+              {hideBalances ? <EyeOff size={15} color="#e11d48" /> : <Eye size={15} />}
             </button>
             <button
               type="button"
               className="outline-button"
-              style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "11px", padding: "5px 12px", background: "#f0fdf4", color: "#16a34a", borderColor: "#bbf7d0" }}
-              onClick={() => setShowTaxOptimizer(true)}
-              title="FBR Withholding Tax Refund Reclaimer"
+              style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "11px", padding: "4px 9px" }}
+              onClick={() => setShowBiometrics(true)}
+              title="Windows Hello / Touch ID / Face ID Biometric Security"
             >
-              <FileSpreadsheet size={13} /> WHT Refund
+              <Fingerprint size={13} color="#2563eb" /> Biometrics
             </button>
             <button
               type="button"
               className="outline-button"
-              style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "11px", padding: "5px 12px", background: "#fdf4ff", color: "#9333ea", borderColor: "#f0abfc" }}
+              style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "11px", padding: "4px 9px", background: "#fdf4ff", color: "#9333ea", borderColor: "#f0abfc" }}
               onClick={() => setShowReceiptScanner(true)}
               title="Scan supermarket receipts, fuel slips or utility bills"
             >
@@ -739,20 +751,12 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
             </article>
           </section>
 
-          {/* 30-Day Predictive Cash Flow & Inactivity Safe-Zone Forecaster */}
-          <PredictiveForecastWidget
+          {/* Unified Financial Intelligence & Forecast Hub */}
+          <IntelligenceHub
             accounts={activeAccounts}
             transactions={transactions}
             selectedDate={selectedDate}
-          />
-
-          {/* Pakistan Saraf Bullion & Multi-Currency Hedge Terminal */}
-          <ForexBullionWidget totalLiquidPaisa={accountTotal} />
-
-          {/* Milestone Compound Wealth Simulator & FIRE Calculator */}
-          <FireCalculatorWidget
-            currentNetWorthPaisa={accountTotal + 1740426n}
-            defaultMonthlySavingsPaisa={500000n}
+            totalLiquidPaisa={accountTotal}
             annualExpensesPaisa={monthSummary.expenses * 12n}
           />
 
@@ -774,7 +778,7 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
                       <strong>{account.name}</strong>
                       <span>{accountTypeLabel[account.account_type] ?? "Account"}{account.is_active ? "" : " · Inactive"}</span>
                     </div>
-                    <strong className="account-balance">{formatPkr(balance)}</strong>
+                    <strong className="account-balance">{hideBalances ? "••••••" : formatPkr(balance)}</strong>
                     <button
                       type="button"
                       className="account-more"
@@ -787,7 +791,7 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
                   </div>
                 );
               })}</div> : <EmptyAccounts onCreate={() => setShowAccountDialog(true)} />}
-              {dataAvailable && accounts.length > 0 && <div className="account-total"><span>Total account balances</span><strong>{formatPkr(accountTotal)}</strong></div>}
+              {dataAvailable && accounts.length > 0 && <div className="account-total"><span>Total account balances</span><strong>{hideBalances ? "••••••" : formatPkr(accountTotal)}</strong></div>}
             </article>
 
             <article className="panel activity-panel">
@@ -854,6 +858,16 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
       {showBillSplitter && (
         <BillSplitterModal
           onClose={() => setShowBillSplitter(false)}
+        />
+      )}
+      {showBiometrics && (
+        <BiometricAuthModal
+          userEmail={user.email || ""}
+          userId={user.id}
+          onSuccess={() => {
+            setToast("Biometrics verified successfully!");
+          }}
+          onClose={() => setShowBiometrics(false)}
         />
       )}
       {editingAccount && (

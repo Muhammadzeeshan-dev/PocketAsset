@@ -9,6 +9,7 @@ import {
   Database,
   Download,
   FileText,
+  Fingerprint,
   Key,
   Lock,
   Pencil,
@@ -30,6 +31,8 @@ import {
 } from "@/lib/finance";
 import { createFullBackup, validateAndParseBackup } from "@/lib/settings";
 import { EditAccountDialog } from "@/components/edit-account-dialog";
+import { BiometricAuthModal } from "@/components/biometric-auth-modal";
+import { isBiometricsEnrolled } from "@/lib/biometrics";
 
 interface SettingsPageProps {
   user: User;
@@ -50,6 +53,7 @@ export function SettingsPage({
 }: SettingsPageProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editingAccount, setEditingAccount] = useState<FinanceAccount | null>(null);
+  const [showBioModal, setShowBioModal] = useState(false);
 
   // Settings state
   const [expectedAllowance, setExpectedAllowance] = useState("800");
@@ -390,6 +394,56 @@ export function SettingsPage({
         )}
       </section>
 
+      {/* Hardware Biometrics (Windows Hello / Touch ID / Face ID) */}
+      <section className="dashboard-card" style={{ marginBottom: "1.5rem" }}>
+        <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "10px" }}>
+          <div>
+            <h3>Hardware Biometrics (Windows Hello &bull; Touch ID &bull; Face ID)</h3>
+            <p className="card-caption">
+              Protect PocketAsset with your device’s fingerprint scanner or camera facial recognition via WebAuthn FIDO2.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="outline-button"
+            style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12px", padding: "6px 14px" }}
+            onClick={() => setShowBioModal(true)}
+          >
+            <Fingerprint size={15} color="#2563eb" /> Configure Biometrics
+          </button>
+        </div>
+
+        <div style={{ marginTop: "1rem", padding: "12px 16px", background: "#f8fafc", borderRadius: "10px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#eff6ff", display: "grid", placeItems: "center" }}>
+              <Fingerprint size={18} color="#2563eb" />
+            </div>
+            <div>
+              <strong style={{ fontSize: "13px", color: "#0f172a", display: "block" }}>
+                {isBiometricsEnrolled() ? "Biometric Security Active" : "No Biometric Device Registered"}
+              </strong>
+              <span style={{ fontSize: "11px", color: "#64748b" }}>
+                {isBiometricsEnrolled()
+                  ? "Enrolled for 1-tap fingerprint or facial unlock."
+                  : "Tap 'Configure Biometrics' to enroll Windows Hello, Touch ID, or Face ID."}
+              </span>
+            </div>
+          </div>
+          <span
+            style={{
+              fontSize: "11px",
+              fontWeight: "700",
+              padding: "4px 10px",
+              borderRadius: "999px",
+              background: isBiometricsEnrolled() ? "#ecfdf5" : "#f1f5f9",
+              color: isBiometricsEnrolled() ? "#059669" : "#64748b",
+            }}
+          >
+            {isBiometricsEnrolled() ? "Enrolled ✓" : "Inactive"}
+          </span>
+        </div>
+      </section>
+
       {/* Security Principles */}
       <section className="dashboard-card">
         <div className="card-header">
@@ -419,6 +473,17 @@ export function SettingsPage({
             onRefresh();
             onToast(message);
           }}
+        />
+      )}
+      {showBioModal && (
+        <BiometricAuthModal
+          userEmail={user.email || ""}
+          userId={user.id}
+          onSuccess={() => {
+            onToast("Biometrics updated successfully!");
+            setShowBioModal(false);
+          }}
+          onClose={() => setShowBioModal(false)}
         />
       )}
     </div>

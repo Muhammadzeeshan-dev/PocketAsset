@@ -72,7 +72,7 @@ function ModalShell({
         role="dialog"
         aria-modal="true"
         aria-labelledby="receipt-dialog-title"
-        style={{ maxWidth: "680px" }}
+        style={{ maxWidth: "680px", maxHeight: "min(92vh, 840px)" }}
       >
         <div className="dialog-heading">
           <div>
@@ -243,7 +243,7 @@ export function ReceiptScannerDialog({
       subtitle="AI-powered camera &amp; document parser for Pakistani supermarket receipts, fuel slips, and utility bills."
       onClose={onClose}
     >
-      <div className="receipt-scanner-modal-body">
+      <div className="dialog-scroll-body receipt-scanner-modal-body" style={{ padding: "16px 20px" }}>
         {/* Source Switcher */}
         <div className="report-frequency-bar" style={{ margin: "0 0 16px 0", width: "100%" }}>
           <button

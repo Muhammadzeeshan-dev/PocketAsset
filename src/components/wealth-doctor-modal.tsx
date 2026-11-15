@@ -59,7 +59,7 @@ function ModalShell({
         role="dialog"
         aria-modal="true"
         aria-labelledby="doctor-dialog-title"
-        style={{ maxWidth: "720px" }}
+        style={{ maxWidth: "660px", maxHeight: "min(92vh, 820px)" }}
       >
         <div className="dialog-heading">
           <div>
@@ -99,7 +99,7 @@ export function WealthDoctorModal({
       subtitle="Holistic diagnostic score combining liquidity buffer, wealth retention, debt leverage, and multi-asset defense."
       onClose={onClose}
     >
-      <div style={{ display: "grid", gap: "18px" }}>
+      <div className="dialog-scroll-body" style={{ display: "grid", gap: "16px", padding: "16px 20px" }}>
         {/* Top Score Banner */}
         <div
           style={{

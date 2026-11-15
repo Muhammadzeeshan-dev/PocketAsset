@@ -159,7 +159,7 @@ export function SmsParserDialog({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <section className="dialog-card" style={{ maxWidth: "560px" }} role="dialog" aria-modal="true">
+      <section className="dialog-card" style={{ maxWidth: "560px", maxHeight: "min(92vh, 820px)" }} role="dialog" aria-modal="true">
         <div className="dialog-heading">
           <div>
             <p className="panel-kicker">Instant Transaction Extraction</p>
@@ -171,7 +171,7 @@ export function SmsParserDialog({
           </button>
         </div>
 
-        <div style={{ padding: "16px 22px" }}>
+        <div className="dialog-scroll-body" style={{ padding: "16px 22px" }}>
           {/* Quick Sample Chips */}
           <div style={{ marginBottom: "12px" }}>
             <span style={{ fontSize: "11px", color: "#64748b", fontWeight: 600, display: "block", marginBottom: "6px" }}>
