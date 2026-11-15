@@ -33,6 +33,7 @@ import {
   ShoppingBag,
   Smartphone,
   Sparkles,
+  ScanLine,
   TrendingDown,
   TrendingUp,
   Trash2,
@@ -94,6 +95,9 @@ import { NotificationBell } from "@/components/notification-bell";
 import { EditAccountDialog } from "@/components/edit-account-dialog";
 import { SmsParserDialog } from "@/components/sms-parser-dialog";
 import { ZakatCalculator } from "@/components/zakat-calculator";
+import { ReceiptScannerDialog } from "@/components/receipt-scanner-dialog";
+import { ForexBullionWidget } from "@/components/forex-bullion-widget";
+import { PredictiveForecastWidget } from "@/components/predictive-forecast";
 import { calculateCashRunway } from "@/lib/runway";
 import { Shield } from "lucide-react";
 
@@ -146,6 +150,7 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
   const [showAccountDialog, setShowAccountDialog] = useState(false);
   const [editingAccount, setEditingAccount] = useState<FinanceAccount | null>(null);
   const [showSmsParser, setShowSmsParser] = useState(false);
+  const [showReceiptScanner, setShowReceiptScanner] = useState(false);
   const [toast, setToast] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -351,6 +356,15 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
             </div>
           </div>
           <div className="topbar-actions">
+            <button
+              type="button"
+              className="outline-button"
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "11px", padding: "5px 12px", background: "#fdf4ff", color: "#9333ea", borderColor: "#f0abfc" }}
+              onClick={() => setShowReceiptScanner(true)}
+              title="Scan supermarket receipts, fuel slips or utility bills"
+            >
+              <ScanLine size={13} /> Scan Bill
+            </button>
             <NotificationBell />
             {offline && <span className="offline-pill"><span />Offline mode</span>}
             <div className="topbar-profile"><div className="user-avatar small">{(user.email?.[0] ?? "P").toUpperCase()}</div><span>{user.email?.split("@")[0]}</span><ChevronDown size={14} /></div>
@@ -537,6 +551,7 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
             <button type="button" className="quick-action quick-income" onClick={() => openEntry("income")}><ArrowDownRight size={15} /> Add Money</button>
             <button type="button" className="quick-action quick-expense" onClick={() => openEntry("expense")}><ShoppingBag size={14} /> Add Expense</button>
             <button type="button" className="quick-action quick-transfer" onClick={() => openEntry("transfer")}><ArrowLeftRight size={15} /> Transfer</button>
+            <button type="button" className="quick-action" style={{ background: "#fdf4ff", color: "#9333ea", borderColor: "#f0abfc" }} onClick={() => setShowReceiptScanner(true)}><ScanLine size={15} /> Scan Bill / Receipt</button>
             <button type="button" className="quick-action" style={{ background: "#eff6ff", color: "#2563eb", borderColor: "#bfdbfe" }} onClick={() => setShowSmsParser(true)}><MessageSquareText size={15} /> Paste SMS / Bank Alert</button>
             <Link href="/calendar" className="quick-action"><CalendarDays size={14} /> View Calendar</Link>
             <Link href="/zakat" className="quick-action"><Moon size={14} /> Zakat &amp; Nisab</Link>
@@ -692,6 +707,16 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
             </article>
           </section>
 
+          {/* 30-Day Predictive Cash Flow & Inactivity Safe-Zone Forecaster */}
+          <PredictiveForecastWidget
+            accounts={activeAccounts}
+            transactions={transactions}
+            selectedDate={selectedDate}
+          />
+
+          {/* Pakistan Saraf Bullion & Multi-Currency Hedge Terminal */}
+          <ForexBullionWidget totalLiquidPaisa={accountTotal} />
+
           <section className="dashboard-grid lower-grid">
             <article className="panel accounts-panel">
               <div className="panel-heading">
@@ -758,6 +783,18 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
           onClose={() => setShowSmsParser(false)}
           onSaved={(msg) => {
             setShowSmsParser(false);
+            handleSaved(msg);
+          }}
+        />
+      )}
+      {showReceiptScanner && (
+        <ReceiptScannerDialog
+          accounts={activeAccounts}
+          userId={user.id}
+          supabase={supabase}
+          onClose={() => setShowReceiptScanner(false)}
+          onSaved={(msg) => {
+            setShowReceiptScanner(false);
             handleSaved(msg);
           }}
         />
