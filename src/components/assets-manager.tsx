@@ -50,46 +50,9 @@ export function AssetsManager({
   onRefresh,
   onToast,
 }: AssetsManagerProps) {
-  // Initial realistic assets and liabilities
-  const [assets, setAssets] = useState<Asset[]>([
-    {
-      id: "asset-1",
-      user_id: userId,
-      name: "Dell XPS 15 Workstation",
-      asset_type: "electronics",
-      purchase_date: "2025-08-15",
-      purchase_cost_paisa: 18000000n, // Rs. 180,000
-      current_estimated_value_paisa: 15500000n, // Rs. 155,000
-      ownership: "Sole owner",
-      notes: "Development machine",
-    },
-    {
-      id: "asset-2",
-      user_id: userId,
-      name: "OnePlus Smartphone",
-      asset_type: "electronics",
-      purchase_date: "2025-02-10",
-      purchase_cost_paisa: 7500000n, // Rs. 75,000
-      current_estimated_value_paisa: 5500000n, // Rs. 55,000
-      ownership: "Sole owner",
-      notes: "Primary phone",
-    },
-  ]);
-
-  const [liabilities, setLiabilities] = useState<Liability[]>([
-    {
-      id: "liab-1",
-      user_id: userId,
-      name: "Short-term borrow from cousin",
-      liability_type: "borrowed_money",
-      principal_amount_paisa: 500000n, // Rs. 5,000
-      remaining_balance_paisa: 300000n, // Rs. 3,000 remaining
-      owed_to: "Hamza",
-      due_date: "2026-11-20",
-      is_settled: false,
-      notes: "Covered unexpected travel ticket",
-    },
-  ]);
+  // Initial assets and liabilities start at zero - user can add their own
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [liabilities, setLiabilities] = useState<Liability[]>([]);
 
   const [activeTab, setActiveTab] = useState<"overview" | "assets" | "liabilities">("overview");
 
@@ -287,18 +250,27 @@ export function AssetsManager({
                 </tr>
               </thead>
               <tbody>
-                {assets.map((a) => (
-                  <tr key={a.id}>
-                    <td>
-                      <strong>{a.name}</strong>
-                      <div style={{ fontSize: "0.75rem", color: "#64748b" }}>Cost: {formatPkr(a.purchase_cost_paisa)}</div>
-                    </td>
-                    <td style={{ textTransform: "capitalize", color: "#475569" }}>{a.asset_type}</td>
-                    <td>
-                      <strong>{formatPkr(a.current_estimated_value_paisa)}</strong>
+                {assets.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} style={{ textAlign: "center", color: "#64748b", padding: "2rem 1rem" }}>
+                      <p style={{ margin: "0 0 0.5rem 0", fontWeight: 600, color: "#334155" }}>No physical assets recorded yet (Rs. 0)</p>
+                      <p style={{ margin: 0, fontSize: "0.85rem" }}>When you acquire a laptop, smartphone, bike, or vehicle, click &quot;Add Physical Asset&quot; above to track its value.</p>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  assets.map((a) => (
+                    <tr key={a.id}>
+                      <td>
+                        <strong>{a.name}</strong>
+                        <div style={{ fontSize: "0.75rem", color: "#64748b" }}>Cost: {formatPkr(a.purchase_cost_paisa)}</div>
+                      </td>
+                      <td style={{ textTransform: "capitalize", color: "#475569" }}>{a.asset_type}</td>
+                      <td>
+                        <strong>{formatPkr(a.current_estimated_value_paisa)}</strong>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -324,34 +296,43 @@ export function AssetsManager({
                 </tr>
               </thead>
               <tbody>
-                {liabilities.map((l) => (
-                  <tr key={l.id} style={{ opacity: l.is_settled ? 0.6 : 1 }}>
-                    <td>
-                      <strong>{l.name}</strong>
-                      {l.due_date && <div style={{ fontSize: "0.75rem", color: "#64748b" }}>Due: {l.due_date}</div>}
-                    </td>
-                    <td>{l.owed_to}</td>
-                    <td>
-                      <strong style={{ color: l.is_settled ? "#64748b" : "#dc2626" }}>
-                        {l.is_settled ? "Settled" : formatPkr(l.remaining_balance_paisa)}
-                      </strong>
-                    </td>
-                    <td style={{ textAlign: "right" }}>
-                      {!l.is_settled ? (
-                        <button
-                          type="button"
-                          className="outline-button"
-                          style={{ padding: "4px 8px", fontSize: "0.75rem" }}
-                          onClick={() => handleSettleLiability(l.id)}
-                        >
-                          Mark Paid
-                        </button>
-                      ) : (
-                        <span style={{ fontSize: "0.75rem", color: "#16a34a", fontWeight: 600 }}>Settled</span>
-                      )}
+                {liabilities.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} style={{ textAlign: "center", color: "#64748b", padding: "2rem 1rem" }}>
+                      <p style={{ margin: "0 0 0.5rem 0", fontWeight: 600, color: "#16a34a" }}>Zero Outstanding Liabilities (Rs. 0)</p>
+                      <p style={{ margin: 0, fontSize: "0.85rem" }}>You are completely debt-free! If you borrow money or take an installment loan, click &quot;Add Liability&quot; above to track it.</p>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  liabilities.map((l) => (
+                    <tr key={l.id} style={{ opacity: l.is_settled ? 0.6 : 1 }}>
+                      <td>
+                        <strong>{l.name}</strong>
+                        {l.due_date && <div style={{ fontSize: "0.75rem", color: "#64748b" }}>Due: {l.due_date}</div>}
+                      </td>
+                      <td>{l.owed_to}</td>
+                      <td>
+                        <strong style={{ color: l.is_settled ? "#64748b" : "#dc2626" }}>
+                          {l.is_settled ? "Settled" : formatPkr(l.remaining_balance_paisa)}
+                        </strong>
+                      </td>
+                      <td style={{ textAlign: "right" }}>
+                        {!l.is_settled ? (
+                          <button
+                            type="button"
+                            className="outline-button"
+                            style={{ padding: "4px 8px", fontSize: "0.75rem" }}
+                            onClick={() => handleSettleLiability(l.id)}
+                          >
+                            Mark Paid
+                          </button>
+                        ) : (
+                          <span style={{ fontSize: "0.75rem", color: "#16a34a", fontWeight: 600 }}>Settled</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

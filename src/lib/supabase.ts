@@ -24,19 +24,31 @@ let memoryTransactions = [...DEMO_TRANSACTIONS];
 
 export function createDemoSupabaseClient(): SupabaseClient {
   const queryBuilder = (table: string) => {
-    const currentData = table === "account_balances" || table === "accounts"
-      ? DEMO_ACCOUNTS
-      : memoryTransactions;
+    let filterCol: string | null = null;
+    let filterVal: unknown = null;
+    let pendingUpdates: Record<string, unknown> | null = null;
+
+    const executeUpdate = () => {
+      if (pendingUpdates && table === "accounts") {
+        const target = DEMO_ACCOUNTS.find((acc) => {
+          if (!filterCol) return true;
+          return (acc as unknown as Record<string, unknown>)[filterCol] === filterVal;
+        });
+        if (target) {
+          Object.assign(target, pendingUpdates);
+        }
+      }
+    };
 
     type MockBuilder = {
       select: () => MockBuilder;
       order: () => MockBuilder;
       is: () => MockBuilder;
       range: (_from?: number, _to?: number) => Promise<{ data: unknown; error: null }>;
-      eq: () => MockBuilder;
+      eq: (col?: string, val?: unknown) => MockBuilder;
       single: () => Promise<{ data: unknown; error: null }>;
       insert: (record: unknown) => Promise<{ data: unknown; error: null }>;
-      update: (updates: unknown) => Promise<{ data: unknown; error: null }>;
+      update: (updates: unknown) => MockBuilder;
       delete: () => Promise<{ data: null; error: null }>;
       then: (resolve: (val: { data: unknown; error: null }) => unknown) => unknown;
     };
@@ -45,23 +57,71 @@ export function createDemoSupabaseClient(): SupabaseClient {
       select: () => builder,
       order: () => builder,
       is: () => builder,
+      eq: (col?: string, val?: unknown) => {
+        if (col) {
+          filterCol = col;
+          filterVal = val;
+          if (pendingUpdates) executeUpdate();
+        }
+        return builder;
+      },
       range: () => {
+        const currentData = table === "account_balances" || table === "accounts"
+          ? DEMO_ACCOUNTS
+          : memoryTransactions;
         return Promise.resolve({ data: currentData, error: null });
       },
-      eq: () => builder,
-      single: () => Promise.resolve({ data: currentData[0] || null, error: null }),
+      single: () => {
+        const currentData = table === "account_balances" || table === "accounts"
+          ? DEMO_ACCOUNTS
+          : memoryTransactions;
+        return Promise.resolve({ data: currentData[0] || null, error: null });
+      },
       insert: (record: unknown) => {
-        const item = (Array.isArray(record) ? record[0] : record) as FinanceTransaction;
+        const item = (Array.isArray(record) ? record[0] : record) as Record<string, unknown>;
         if (table === "transactions") {
-          memoryTransactions = [item, ...memoryTransactions];
+          const txWithId: FinanceTransaction = {
+            id: (item.id as string) || `tx-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            account_id: (item.account_id as string) || "acc-cash",
+            transfer_to_account_id: (item.transfer_to_account_id as string) ?? null,
+            transaction_type: (item.transaction_type as any) || "adjustment",
+            amount_paisa: (item.amount_paisa as bigint | string | number) ?? 0n,
+            direction: (item.direction as any) || "inflow",
+            occurred_at: (item.occurred_at as string) || new Date().toISOString(),
+            category: (item.category as string) ?? null,
+            description: (item.description as string) || "Manual adjustment",
+            notes: (item.notes as string) ?? null,
+          };
+          memoryTransactions = [txWithId, ...memoryTransactions];
+          return Promise.resolve({ data: txWithId, error: null });
+        }
+        if (table === "accounts") {
+          const accWithId: FinanceAccount = {
+            id: (item.id as string) || `acc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            name: (item.name as string) || "New Account",
+            account_type: (item.account_type as any) || "cash",
+            opening_balance_paisa: (item.opening_balance_paisa as any) ?? 0n,
+            currency: (item.currency as string) || "PKR",
+            is_active: item.is_active !== false,
+          };
+          DEMO_ACCOUNTS.push(accWithId);
+          return Promise.resolve({ data: accWithId, error: null });
         }
         return Promise.resolve({ data: item, error: null });
       },
       update: (updates: unknown) => {
-        return Promise.resolve({ data: updates, error: null });
+        pendingUpdates = (updates as Record<string, unknown>) || {};
+        executeUpdate();
+        return builder;
       },
       delete: () => Promise.resolve({ data: null, error: null }),
-      then: (resolve) => resolve({ data: currentData, error: null }),
+      then: (resolve) => {
+        executeUpdate();
+        const currentData = table === "account_balances" || table === "accounts"
+          ? DEMO_ACCOUNTS
+          : memoryTransactions;
+        return Promise.resolve(resolve({ data: pendingUpdates || currentData, error: null }));
+      },
     };
 
     return builder;

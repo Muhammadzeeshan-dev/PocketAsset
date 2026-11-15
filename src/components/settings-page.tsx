@@ -11,6 +11,7 @@ import {
   FileText,
   Key,
   Lock,
+  Pencil,
   Plus,
   RefreshCw,
   Shield,
@@ -20,8 +21,15 @@ import {
   User as UserIcon,
   Wallet,
 } from "lucide-react";
-import { formatPkr, type FinanceAccount, type FinanceTransaction } from "@/lib/finance";
+import {
+  accountTypeLabel,
+  calculateAccountBalance,
+  formatPkr,
+  type FinanceAccount,
+  type FinanceTransaction,
+} from "@/lib/finance";
 import { createFullBackup, validateAndParseBackup } from "@/lib/settings";
+import { EditAccountDialog } from "@/components/edit-account-dialog";
 
 interface SettingsPageProps {
   user: User;
@@ -41,6 +49,7 @@ export function SettingsPage({
   onToast,
 }: SettingsPageProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [editingAccount, setEditingAccount] = useState<FinanceAccount | null>(null);
 
   // Settings state
   const [expectedAllowance, setExpectedAllowance] = useState("800");
@@ -144,6 +153,97 @@ export function SettingsPage({
           <div>
             <label style={{ fontSize: "0.8rem", color: "#64748b", display: "block" }}>Storage & Security</label>
             <strong style={{ fontSize: "0.95rem", color: "#16a34a" }}>Row-Level Security Active</strong>
+          </div>
+        </div>
+      </section>
+
+      {/* Liquid Accounts & Balance Reconciliation */}
+      <section className="dashboard-card" style={{ marginBottom: "1.5rem" }}>
+        <div className="card-header">
+          <div>
+            <h3>Liquid Accounts &amp; Balance Reconciliation</h3>
+            <p className="card-caption">
+              Reconcile your actual cash in hand, JazzCash, Easypaisa, or bank balances when you forget to record daily transactions.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ marginTop: "1rem" }}>
+          <div style={{ display: "grid", gap: "10px" }}>
+            {accounts.map((acc) => {
+              const currentBal = calculateAccountBalance(acc, transactions);
+              return (
+                <div
+                  key={acc.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "12px 16px",
+                    background: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "10px",
+                    gap: "12px",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: "180px" }}>
+                    <div
+                      style={{
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "8px",
+                        background: "#eff6ff",
+                        color: "#2563eb",
+                        display: "grid",
+                        placeItems: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Wallet size={18} />
+                    </div>
+                    <div>
+                      <strong style={{ fontSize: "14px", color: "#0f172a", display: "block" }}>
+                        {acc.name}
+                      </strong>
+                      <span style={{ fontSize: "11px", color: "#64748b" }}>
+                        {accountTypeLabel[acc.account_type] ?? "Account"}
+                        {!acc.is_active ? " · Inactive" : ""}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "16px", marginLeft: "auto" }}>
+                    <div style={{ textAlign: "right" }}>
+                      <span
+                        style={{
+                          fontSize: "10px",
+                          color: "#64748b",
+                          textTransform: "uppercase",
+                          display: "block",
+                          fontWeight: 600,
+                          letterSpacing: "0.5px",
+                        }}
+                      >
+                        Current Balance
+                      </span>
+                      <strong style={{ fontSize: "15px", color: "#0f172a" }}>
+                        {formatPkr(currentBal)}
+                      </strong>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="outline-button"
+                      style={{ padding: "6px 12px", fontSize: "12px", gap: "6px" }}
+                      onClick={() => setEditingAccount(acc)}
+                    >
+                      <Pencil size={13} /> Edit / Reconcile
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -278,6 +378,21 @@ export function SettingsPage({
           <li><strong>No automatic trading:</strong> All ledger entries require explicit user confirmation.</li>
         </ul>
       </section>
+
+      {editingAccount && (
+        <EditAccountDialog
+          account={editingAccount}
+          currentBalance={calculateAccountBalance(editingAccount, transactions)}
+          userId={user.id}
+          supabase={supabase}
+          onClose={() => setEditingAccount(null)}
+          onUpdated={(message) => {
+            setEditingAccount(null);
+            onRefresh();
+            onToast(message);
+          }}
+        />
+      )}
     </div>
   );
 }

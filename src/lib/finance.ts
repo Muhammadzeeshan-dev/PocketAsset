@@ -11,6 +11,15 @@ export type TransactionType =
 export type AccountType = "cash" | "wallet" | "bank" | "savings" | "brokerage_cash" | "custom";
 export type Direction = "inflow" | "outflow";
 
+export const accountTypeLabel: Record<AccountType, string> = {
+  cash: "Cash in hand",
+  wallet: "Mobile wallet (JazzCash / Easypaisa)",
+  bank: "Bank account",
+  savings: "Savings account",
+  brokerage_cash: "Brokerage cash",
+  custom: "Other account",
+};
+
 export interface FinanceAccount {
   id: string;
   name: string;

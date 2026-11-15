@@ -89,6 +89,7 @@ import { FinancialAssistant } from "@/components/financial-assistant";
 import { SettingsPage } from "@/components/settings-page";
 import { FinancialCalendar } from "@/components/financial-calendar";
 import { NotificationBell } from "@/components/notification-bell";
+import { EditAccountDialog } from "@/components/edit-account-dialog";
 import { Shield } from "lucide-react";
 
 type EntryKind = TransactionType;
@@ -138,6 +139,7 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
   const [editingTransaction, setEditingTransaction] = useState<FinanceTransaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<FinanceTransaction | null>(null);
   const [showAccountDialog, setShowAccountDialog] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<FinanceAccount | null>(null);
   const [toast, setToast] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -634,7 +636,27 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
               {!dataAvailable ? <EmptyChart icon={Wallet} title="Ledger data is unavailable" detail="Reconnect to load your saved account balances." /> : accounts.length ? <div className="account-list">{accounts.map((account) => {
                 const Icon = accountIcon[account.account_type] ?? CreditCard;
                 const balance = calculateAccountBalance(account, transactions);
-                return <div className={`account-row ${account.is_active ? "" : "account-row-inactive"}`} key={account.id}><div className={`account-icon account-${account.account_type}`}><Icon size={17} /></div><div className="account-info"><strong>{account.name}</strong><span>{accountTypeLabel[account.account_type] ?? "Account"}{account.is_active ? "" : " · Inactive"}</span></div><strong className="account-balance">{formatPkr(balance)}</strong></div>;
+                return (
+                  <div className={`account-row ${account.is_active ? "" : "account-row-inactive"}`} key={account.id}>
+                    <div className={`account-icon account-${account.account_type}`}>
+                      <Icon size={17} />
+                    </div>
+                    <div className="account-info">
+                      <strong>{account.name}</strong>
+                      <span>{accountTypeLabel[account.account_type] ?? "Account"}{account.is_active ? "" : " · Inactive"}</span>
+                    </div>
+                    <strong className="account-balance">{formatPkr(balance)}</strong>
+                    <button
+                      type="button"
+                      className="account-more"
+                      title={`Edit ${account.name} or adjust balance`}
+                      aria-label={`Edit ${account.name} or adjust balance`}
+                      onClick={() => setEditingAccount(account)}
+                    >
+                      <Pencil size={13} />
+                    </button>
+                  </div>
+                );
               })}</div> : <EmptyAccounts onCreate={() => setShowAccountDialog(true)} />}
               {dataAvailable && accounts.length > 0 && <div className="account-total"><span>Total account balances</span><strong>{formatPkr(accountTotal)}</strong></div>}
             </article>
@@ -663,6 +685,19 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
       {editingTransaction && <TransactionCorrectionDialog transaction={editingTransaction} accounts={activeAccounts} userId={user.id} supabase={supabase} onClose={() => setEditingTransaction(null)} onSaved={(message) => { setEditingTransaction(null); handleSaved(message); }} />}
       {deletingTransaction && <DeleteTransactionDialog transaction={deletingTransaction} userId={user.id} supabase={supabase} onClose={() => setDeletingTransaction(null)} onDeleted={(message) => { setDeletingTransaction(null); handleSaved(message); }} />}
       {showAccountDialog && <AccountDialog userId={user.id} supabase={supabase} onClose={() => setShowAccountDialog(false)} onCreated={() => handleSaved("Account added. Its opening balance is recorded separately from income.")} />}
+      {editingAccount && (
+        <EditAccountDialog
+          account={editingAccount}
+          currentBalance={calculateAccountBalance(editingAccount, transactions)}
+          userId={user.id}
+          supabase={supabase}
+          onClose={() => setEditingAccount(null)}
+          onUpdated={(message) => {
+            setEditingAccount(null);
+            handleSaved(message);
+          }}
+        />
+      )}
       {toast && <div className="toast-message" role="status"><span className="toast-check">✓</span>{toast}<button type="button" aria-label="Dismiss notification" onClick={() => setToast("")}><X size={15} /></button></div>}
     </div>
   );
