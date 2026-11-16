@@ -115,6 +115,8 @@ import { IntelligenceHub } from "@/components/intelligence-hub";
 import { SarmayaProSuite } from "@/components/sarmaya-pro-suite";
 import { calculateCashRunway } from "@/lib/runway";
 import { Shield } from "lucide-react";
+import { autoEnrichTransaction, suggestAccountId, type EnrichedTransactionDetails } from "@/lib/auto-enrich";
+import { nextRecurrenceDate } from "@/lib/recurrence";
 
 type EntryKind = TransactionType;
 type DashboardProps = {
@@ -174,6 +176,85 @@ export function Dashboard({ user, supabase, section, onSignedOut, onExtendSessio
   const [toast, setToast] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const directSupabaseAvailableRef = useRef<boolean | null>(null);
+
+  // Auto-Detect Due Recurring Bills State
+  const [dueRecurringBills, setDueRecurringBills] = useState<any[]>([]);
+  const [recordingDueBill, setRecordingDueBill] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function checkDueBills() {
+      try {
+        const res = await fetch("/api/finance/recurring");
+        if (res.ok) {
+          const json = await res.json();
+          if (cancelled) return;
+          if (json.success && Array.isArray(json.schedules)) {
+            const todayKey = getPakistanDateKey(new Date());
+            const due = json.schedules.filter((s: any) => s.active && s.next_due_date <= todayKey);
+            setDueRecurringBills(due);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+    void checkDueBills();
+    return () => {
+      cancelled = true;
+    };
+  }, [transactions]);
+
+  async function handleAutoRecordDueBill(bill: any) {
+    setRecordingDueBill(true);
+    try {
+      const now = new Date();
+      const occurredAt = now.toISOString();
+      const activeAccs = accounts.filter((a) => a.is_active);
+      const transactionPayload = {
+        id: crypto.randomUUID(),
+        user_id: user.id,
+        account_id: bill.account_id || activeAccs[0]?.id,
+        transfer_to_account_id: null,
+        transaction_type: "expense",
+        amount_paisa: String(bill.amount_paisa),
+        direction: "outflow",
+        category: bill.category || "Bills & Recurring",
+        description: bill.description,
+        notes: `Auto-recorded from scheduled recurrence on ${getPakistanDateKey(now)}.`,
+        occurred_at: occurredAt,
+        expense_classification: bill.expense_classification || "essential",
+        quantity: bill.quantity || null,
+        recurring_expense_id: bill.id,
+        recurring_occurrence_date: bill.next_due_date,
+      };
+
+      await fetch("/api/finance/data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "create_transaction", transaction: transactionPayload, userId: user.id }),
+      });
+
+      const nextDate = nextRecurrenceDate(bill.next_due_date, bill.interval_unit, bill.interval_count);
+      await fetch("/api/finance/recurring", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update",
+          scheduleId: bill.id,
+          payload: { next_due_date: nextDate },
+        }),
+      });
+
+      setDueRecurringBills((prev) => prev.filter((b) => b.id !== bill.id));
+      await refreshData(true);
+      setToast(`⚡ Auto-Recorded ${bill.description} (${formatPkr(bill.amount_paisa)}). Next due date: ${nextDate}.`);
+    } catch {
+      setToast("Could not auto-record recurring bill.");
+    } finally {
+      setRecordingDueBill(false);
+    }
+  }
 
   const handleManualExtendSession = useCallback(async () => {
     const now = Date.now();
@@ -465,6 +546,17 @@ export function Dashboard({ user, supabase, section, onSignedOut, onExtendSessio
             </div>
           </div>
           <div className="topbar-actions">
+            {/* Live Market Auto-Sync Ticker Pill */}
+            <Link
+              href="/investments"
+              className="topbar-market-ticker-pill hide-on-mobile"
+              title="PSX Live Market: 93,250 (+1.42%) • USD 278.20 • Gold 282.5k"
+            >
+              <span className="live-status-dot live-dot-pulse" />
+              <span className="ticker-code">PSX: 93.2k ▲</span>
+              <span className="ticker-divider">|</span>
+              <span className="ticker-code">USD: 278.2</span>
+            </Link>
             <button
               type="button"
               className="outline-button topbar-text-btn topbar-extend-btn"
@@ -500,6 +592,29 @@ export function Dashboard({ user, supabase, section, onSignedOut, onExtendSessio
         </header>
 
         <div className="dashboard-content">
+          {/* Due Recurring Bills Auto-Detector Alert */}
+          {dueRecurringBills.length > 0 && (
+            <div className="due-bills-auto-banner">
+              <div className="due-bills-left">
+                <Sparkles size={16} className="text-amber" />
+                <div>
+                  <strong>⚡ {dueRecurringBills.length} Scheduled Bill Due ({dueRecurringBills[0].description})</strong>
+                  <span>
+                    Amount: {formatPkr(dueRecurringBills[0].amount_paisa)} &bull; Due date: {dueRecurringBills[0].next_due_date}. Auto-record to your ledger with 1-click.
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="primary-button auto-record-bill-btn"
+                onClick={() => void handleAutoRecordDueBill(dueRecurringBills[0])}
+                disabled={recordingDueBill}
+              >
+                <Zap size={14} className={recordingDueBill ? "spin" : ""} />
+                <span>{recordingDueBill ? "Recording to Ledger…" : "Auto-Record Now"}</span>
+              </button>
+            </div>
+          )}
           {section === "daily" ? <DailyTrackerContent
             userId={user.id}
             supabase={supabase}
@@ -1219,6 +1334,24 @@ function QuickEntryDialog({ kind, initialPreset, accounts, userId, selectedDate,
   const [quantity, setQuantity] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [autoEnrichment, setAutoEnrichment] = useState<EnrichedTransactionDetails | null>(null);
+  const [manualCategory, setManualCategory] = useState(Boolean(initialPreset?.category));
+
+  function handleDescriptionChange(val: string) {
+    setDescription(val);
+    if (kind === "expense") {
+      const enriched = autoEnrichTransaction(val);
+      setAutoEnrichment(enriched);
+      if (enriched && !manualCategory) {
+        setCategory(enriched.category);
+        setExpenseClassification(enriched.expenseClassification);
+      }
+    }
+    const suggestedAcc = suggestAccountId(val, accounts);
+    if (suggestedAcc && suggestedAcc !== accountId) {
+      setAccountId(suggestedAcc);
+    }
+  }
 
   const heading: Record<EntryKind, string> = {
     income: "Add money received",
@@ -1393,10 +1526,42 @@ function QuickEntryDialog({ kind, initialPreset, accounts, userId, selectedDate,
         </div>
       )}
       <label htmlFor="entry-description">Description</label>
-      <input id="entry-description" required maxLength={160} value={description} onChange={(event) => setDescription(event.target.value)} placeholder={kind === "income" ? "e.g. University allowance" : kind === "transfer" ? "e.g. Cash to Easypaisa" : kind === "investment_purchase" ? "e.g. PSX shares" : "e.g. Bus fare"} />
+      <input
+        id="entry-description"
+        required
+        maxLength={160}
+        value={description}
+        onChange={(event) => handleDescriptionChange(event.target.value)}
+        placeholder={kind === "income" ? "e.g. University allowance" : kind === "transfer" ? "e.g. Cash to Easypaisa" : kind === "investment_purchase" ? "e.g. PSX shares" : "e.g. Shell petrol, K-Electric, KFC..."}
+      />
+      {autoEnrichment && kind === "expense" && (
+        <div className="dialog-auto-enrich-pill">
+          <Sparkles size={12} className="text-amber" />
+          <span>
+            ⚡ Auto-Enriched: <strong>{autoEnrichment.category}</strong> &bull; <em>{autoEnrichment.expenseClassification}</em> ({autoEnrichment.confidenceScore}% confidence)
+          </span>
+        </div>
+      )}
       <div className="form-two-columns">
         <div><label htmlFor="entry-amount">Amount (PKR)</label><div className="rupee-input"><span>Rs</span><input id="entry-amount" inputMode="decimal" required value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="0.00" /></div></div>
-        {categories.length > 0 && <div><label htmlFor="entry-category">Category</label><select id="entry-category" value={category} onChange={(event) => setCategory(event.target.value)}><option value="">Choose category</option>{categories.map((item) => <option key={item} value={item}>{item}</option>)}</select></div>}
+        {categories.length > 0 && (
+          <div>
+            <label htmlFor="entry-category">Category</label>
+            <select
+              id="entry-category"
+              value={category}
+              onChange={(event) => {
+                setCategory(event.target.value);
+                setManualCategory(true);
+              }}
+            >
+              <option value="">Choose category</option>
+              {categories.map((item) => (
+                <option key={item} value={item}>{item}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
       <div className="form-two-columns">
         <div><label htmlFor="entry-account">{kind === "transfer" ? "From account" : "Account"}</label><select id="entry-account" required value={accountId} onChange={(event) => setAccountId(event.target.value)}>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></div>

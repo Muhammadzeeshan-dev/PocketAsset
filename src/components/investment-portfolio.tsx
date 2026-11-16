@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   AlertCircle,
@@ -8,13 +8,17 @@ import {
   Building2,
   Calendar,
   CheckCircle2,
+  Clock,
   Edit2,
   PieChart as PieIcon,
   Plus,
+  Radio,
   RefreshCw,
+  Sparkles,
   TrendingDown,
   TrendingUp,
   X,
+  Zap,
 } from "lucide-react";
 import {
   Cell,
@@ -30,6 +34,11 @@ import {
   type StockHolding,
   type StockTransaction,
 } from "@/lib/investments";
+import {
+  autoUpdateHoldingPrices,
+  fetchLiveMarketData,
+  type PsxQuote,
+} from "@/lib/market-feed";
 
 interface InvestmentPortfolioProps {
   userId: string;
@@ -67,6 +76,16 @@ export function InvestmentPortfolio({
   const [newPriceRupees, setNewPriceRupees] = useState("");
   const [priceSource, setPriceSource] = useState("PSX Official Closing Rate");
 
+  // Autonomous Live Market Sync State
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("pocketasset_auto_sync_psx") !== "false";
+  });
+  const [isAutoSyncing, setIsAutoSyncing] = useState(false);
+  const [nextSyncCountdown, setNextSyncCountdown] = useState(300); // 5 minutes
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+  const [liveQuotes, setLiveQuotes] = useState<PsxQuote[]>([]);
+
   // Buy holding form
   const [symbol, setSymbol] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -84,6 +103,77 @@ export function InvestmentPortfolio({
       allocation: h.allocationPercentage,
     }));
   }, [summary]);
+
+  // Autonomous Live Market Fetch & Holding Update Handler
+  async function triggerAutoSync(silent = false) {
+    setIsAutoSyncing(true);
+    try {
+      const feed = await fetchLiveMarketData();
+      setLiveQuotes(feed.psxQuotes);
+
+      const updateResult = autoUpdateHoldingPrices(holdings, feed.psxQuotes);
+
+      if (updateResult.updatedCount > 0) {
+        setHoldings(updateResult.updatedHoldings);
+        const formattedDiff = formatPkr(updateResult.valueDiffPaisa < 0n ? -updateResult.valueDiffPaisa : updateResult.valueDiffPaisa);
+        const sign = updateResult.valueDiffPaisa >= 0n ? "+" : "-";
+
+        if (!silent) {
+          onToast(
+            `⚡ Live PSX Auto-Update: Synchronized ${updateResult.updatedCount} stocks (${sign}${formattedDiff} portfolio change).`
+          );
+        }
+      } else if (!silent) {
+        onToast("⚡ Live PSX prices verified. Portfolio is up to date.");
+      }
+
+      setLastSyncTime(new Date().toLocaleTimeString("en-PK", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit" }));
+      setNextSyncCountdown(300);
+    } catch {
+      if (!silent) onToast("Notice: Market feed snapshot active.");
+    } finally {
+      setIsAutoSyncing(false);
+    }
+  }
+
+  // Initial load auto-fetch
+  useEffect(() => {
+    if (autoSyncEnabled) {
+      void triggerAutoSync(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Periodic auto-sync countdown timer
+  useEffect(() => {
+    if (!autoSyncEnabled) return;
+
+    const interval = setInterval(() => {
+      setNextSyncCountdown((prev) => {
+        if (prev <= 1) {
+          void triggerAutoSync(true);
+          return 300;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [autoSyncEnabled, holdings]);
+
+  function toggleAutoSync() {
+    const nextVal = !autoSyncEnabled;
+    setAutoSyncEnabled(nextVal);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("pocketasset_auto_sync_psx", String(nextVal));
+    }
+    if (nextVal) {
+      onToast("🟢 PSX Live Auto-Sync enabled (refreshes every 5 mins).");
+      void triggerAutoSync(false);
+    } else {
+      onToast("⚪ PSX Live Auto-Sync paused.");
+    }
+  }
 
   function handleOpenPriceUpdate(holding: StockHolding) {
     setSelectedHoldingForUpdate(holding);
@@ -156,6 +246,9 @@ export function InvestmentPortfolio({
     setDialogOpen(false);
   }
 
+  const countdownMinutes = Math.floor(nextSyncCountdown / 60);
+  const countdownSeconds = (nextSyncCountdown % 60).toString().padStart(2, "0");
+
   return (
     <div className="investment-portfolio-page">
       <section className="page-heading">
@@ -175,6 +268,46 @@ export function InvestmentPortfolio({
           </button>
         </div>
       </section>
+
+      {/* Autonomous Live Market Auto-Sync HUD Bar */}
+      <div className="psx-auto-sync-banner">
+        <div className="sync-banner-left">
+          <div className="live-status-pill">
+            <span className={`live-status-dot ${autoSyncEnabled ? "live-dot-pulse" : "live-dot-off"}`} />
+            <strong>{autoSyncEnabled ? "LIVE PSX AUTO-SYNC: CONNECTED" : "PSX AUTO-SYNC: PAUSED"}</strong>
+          </div>
+          <span className="sync-meta-text">
+            {autoSyncEnabled
+              ? `Next auto-fetch in ${countdownMinutes}:${countdownSeconds} • Refreshes bluechip quotes & recalculates net worth`
+              : "Auto-refresh paused. Click to manually fetch latest PSX prices"}
+          </span>
+          {lastSyncTime && (
+            <span className="sync-time-badge">Last updated at {lastSyncTime}</span>
+          )}
+        </div>
+
+        <div className="sync-banner-actions">
+          <button
+            type="button"
+            className={`sync-toggle-btn ${autoSyncEnabled ? "active" : ""}`}
+            onClick={toggleAutoSync}
+            title="Toggle automatic periodic price fetching"
+          >
+            <Radio size={13} />
+            <span>Auto-Update: {autoSyncEnabled ? "ON" : "OFF"}</span>
+          </button>
+
+          <button
+            type="button"
+            className="primary-button sync-fetch-now-btn"
+            onClick={() => void triggerAutoSync(false)}
+            disabled={isAutoSyncing}
+          >
+            <Zap size={14} className={isAutoSyncing ? "spin" : ""} />
+            <span>{isAutoSyncing ? "Fetching PSX Quotes…" : "Fetch Live PSX Prices"}</span>
+          </button>
+        </div>
+      </div>
 
       {/* KPI Financial Overview */}
       <div className="kpi-grid">
@@ -271,8 +404,26 @@ export function InvestmentPortfolio({
                     </td>
                     <td>{formatPkr(holding.average_buy_price_paisa)}</td>
                     <td>
-                      <div style={{ fontWeight: 600 }}>{formatPkr(holding.current_market_price_paisa)}</div>
-                      <small style={{ fontSize: "0.7rem", color: "#94a3b8" }}>{holding.price_source}</small>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <span style={{ fontWeight: 700, color: "#0f172a" }}>{formatPkr(holding.current_market_price_paisa)}</span>
+                        {liveQuotes.find((q) => q.symbol === holding.symbol) && (
+                          <span
+                            className="live-stock-change-pill"
+                            style={{
+                              fontSize: "10px",
+                              fontWeight: 750,
+                              padding: "1px 5px",
+                              borderRadius: "4px",
+                              color: (liveQuotes.find((q) => q.symbol === holding.symbol)?.changePercent ?? 0) >= 0 ? "#059669" : "#e11d48",
+                              background: (liveQuotes.find((q) => q.symbol === holding.symbol)?.changePercent ?? 0) >= 0 ? "#ecfdf5" : "#fef2f2",
+                            }}
+                          >
+                            {(liveQuotes.find((q) => q.symbol === holding.symbol)?.changePercent ?? 0) >= 0 ? "▲ +" : "▼ "}
+                            {liveQuotes.find((q) => q.symbol === holding.symbol)?.changePercent}%
+                          </span>
+                        )}
+                      </div>
+                      <small style={{ fontSize: "0.7rem", color: "#64748b", display: "block", marginTop: "2px" }}>{holding.price_source}</small>
                     </td>
                     <td>
                       <strong>{formatPkr(currentMarketValuePaisa)}</strong>

@@ -1,17 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowDownRight,
   ArrowRightLeft,
   ArrowUpRight,
   Coins,
   Globe,
+  Radio,
   RefreshCw,
   Scale,
   Shield,
   TrendingDown,
   TrendingUp,
+  Zap,
 } from "lucide-react";
 import { formatPkr } from "@/lib/finance";
 import {
@@ -22,6 +24,13 @@ import {
   LIVE_BULLION_RATES,
   LIVE_FOREX_RATES,
 } from "@/lib/forex-bullion";
+import {
+  fetchLiveMarketData,
+  VERIFIED_BULLION_QUOTE,
+  VERIFIED_FOREX_QUOTES,
+  type BullionQuote,
+  type ForexQuote,
+} from "@/lib/market-feed";
 
 interface ForexBullionWidgetProps {
   totalLiquidPaisa: bigint;
@@ -30,34 +39,66 @@ interface ForexBullionWidgetProps {
 export function ForexBullionWidget({ totalLiquidPaisa }: ForexBullionWidgetProps) {
   const [activeTab, setActiveTab] = useState<"rates" | "hedge" | "converter">("rates");
 
+  // Live Auto-Fetched Market State
+  const [bullionRates, setBullionRates] = useState<BullionQuote>(VERIFIED_BULLION_QUOTE);
+  const [forexRates, setForexRates] = useState<ForexQuote[]>(VERIFIED_FOREX_QUOTES);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+
   // Converter state
   const [converterDirection, setConverterDirection] = useState<"fxToPkr" | "pkrToFx">("fxToPkr");
   const [selectedCurrency, setSelectedCurrency] = useState("USD");
   const [inputAmount, setInputAmount] = useState("100");
 
+  async function loadLiveRates() {
+    setIsSyncing(true);
+    try {
+      const feed = await fetchLiveMarketData();
+      if (feed.bullion) setBullionRates(feed.bullion);
+      if (feed.forexQuotes?.length) setForexRates(feed.forexQuotes);
+      setLastSyncTime(new Date().toLocaleTimeString("en-PK", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit" }));
+    } catch {
+      // fallback
+    } finally {
+      setIsSyncing(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadLiveRates();
+  }, []);
+
   const hedgeMetrics = useMemo(() => {
-    return calculateHedgeMetrics(totalLiquidPaisa);
-  }, [totalLiquidPaisa]);
+    const liveBullion = {
+      ...LIVE_BULLION_RATES,
+      gold24kTolaPaisa: BigInt(bullionRates.gold24kTolaRupees) * 100n,
+      gold22kTolaPaisa: BigInt(bullionRates.gold22kTolaRupees) * 100n,
+      silverTolaPaisa: BigInt(bullionRates.silverTolaRupees) * 100n,
+    };
+    return calculateHedgeMetrics(totalLiquidPaisa, 11.8, liveBullion);
+  }, [totalLiquidPaisa, bullionRates]);
 
   const goldGramRate = useMemo(() => {
-    return getGoldRatePerGram(LIVE_BULLION_RATES);
-  }, []);
+    return Math.round(bullionRates.gold24kTolaRupees / 11.6638);
+  }, [bullionRates]);
 
   const convertedResult = useMemo(() => {
     try {
       const num = parseFloat(inputAmount) || 0;
+      const matchedFx = forexRates.find((f) => f.code === selectedCurrency);
+      const rateRupees = matchedFx ? matchedFx.ratePkrRupees : 278.20;
+
       if (converterDirection === "fxToPkr") {
-        const pkrPaisa = convertForeignToPkr(num, selectedCurrency);
-        return formatPkr(pkrPaisa);
+        const pkr = Math.round(num * rateRupees);
+        return `Rs. ${pkr.toLocaleString()}`;
       } else {
-        const paisa = BigInt(Math.round(num * 100));
-        const foreign = convertPkrToForeign(paisa, selectedCurrency);
-        return `${foreign.toLocaleString()} ${selectedCurrency}`;
+        const foreign = rateRupees > 0 ? (num / rateRupees).toFixed(2) : "0.00";
+        return `${Number(foreign).toLocaleString()} ${selectedCurrency}`;
       }
     } catch {
       return "—";
     }
-  }, [inputAmount, selectedCurrency, converterDirection]);
+  }, [inputAmount, selectedCurrency, converterDirection, forexRates]);
 
   return (
     <section className="dashboard-card" style={{ marginBottom: "20px" }}>
@@ -115,6 +156,42 @@ export function ForexBullionWidget({ totalLiquidPaisa }: ForexBullionWidgetProps
       {/* Tab 1: Live Rates Grid */}
       {activeTab === "rates" && (
         <div>
+          {/* Live Auto-Sync Status Bar */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "6px 12px",
+              background: "#f8fafc",
+              border: "1px solid #e2e8f0",
+              borderRadius: "8px",
+              marginBottom: "12px",
+              flexWrap: "wrap",
+              gap: "8px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span className="live-status-dot live-dot-pulse" />
+              <span style={{ fontSize: "11px", fontWeight: 700, color: "#1e293b" }}>
+                LIVE SARAFA &amp; INTERBANK PARITY
+              </span>
+              {lastSyncTime && (
+                <span style={{ fontSize: "10px", color: "#64748b" }}>&bull; Auto-synced at {lastSyncTime}</span>
+              )}
+            </div>
+            <button
+              type="button"
+              className="outline-button"
+              style={{ padding: "3px 10px", fontSize: "11px", height: "28px" }}
+              onClick={() => void loadLiveRates()}
+              disabled={isSyncing}
+            >
+              <RefreshCw size={12} className={isSyncing ? "spin" : ""} />
+              <span>{isSyncing ? "Syncing Feed…" : "Auto-Fetch Now"}</span>
+            </button>
+          </div>
+
           {/* Gold & Silver Tickers */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "10px", marginBottom: "12px" }}>
             <div style={{ background: "#fffbeb", border: "1px solid #fef3c7", borderRadius: "10px", padding: "12px" }}>
@@ -122,9 +199,9 @@ export function ForexBullionWidget({ totalLiquidPaisa }: ForexBullionWidgetProps
                 Gold 24K (Per Tola)
               </span>
               <strong style={{ fontSize: "18px", color: "#92400e", display: "block", marginTop: "2px" }}>
-                {formatPkr(LIVE_BULLION_RATES.gold24kTolaPaisa)}
+                Rs. {bullionRates.gold24kTolaRupees.toLocaleString()}
               </strong>
-              <small style={{ fontSize: "10px", color: "#b45309" }}>11.66g &bull; {formatPkr(goldGramRate)}/g</small>
+              <small style={{ fontSize: "10px", color: "#b45309" }}>11.66g &bull; Rs. {goldGramRate.toLocaleString()}/g</small>
             </div>
 
             <div style={{ background: "#fffbeb", border: "1px solid #fef3c7", borderRadius: "10px", padding: "12px" }}>
@@ -132,7 +209,7 @@ export function ForexBullionWidget({ totalLiquidPaisa }: ForexBullionWidgetProps
                 Gold 22K (Per Tola)
               </span>
               <strong style={{ fontSize: "18px", color: "#92400e", display: "block", marginTop: "2px" }}>
-                {formatPkr(LIVE_BULLION_RATES.gold22kTolaPaisa)}
+                Rs. {bullionRates.gold22kTolaRupees.toLocaleString()}
               </strong>
               <small style={{ fontSize: "10px", color: "#b45309" }}>Jewelry Benchmark</small>
             </div>
@@ -142,7 +219,7 @@ export function ForexBullionWidget({ totalLiquidPaisa }: ForexBullionWidgetProps
                 Silver (Per Tola)
               </span>
               <strong style={{ fontSize: "18px", color: "#1e293b", display: "block", marginTop: "2px" }}>
-                {formatPkr(LIVE_BULLION_RATES.silverTolaPaisa)}
+                Rs. {bullionRates.silverTolaRupees.toLocaleString()}
               </strong>
               <small style={{ fontSize: "10px", color: "#64748b" }}>Chandi &bull; Nisab Reference</small>
             </div>
@@ -150,7 +227,7 @@ export function ForexBullionWidget({ totalLiquidPaisa }: ForexBullionWidgetProps
 
           {/* Forex Currencies Row */}
           <div style={{ display: "flex", gap: "10px", overflowX: "auto", paddingBottom: "4px" }}>
-            {LIVE_FOREX_RATES.map((curr) => (
+            {forexRates.map((curr) => (
               <div
                 key={curr.code}
                 style={{
@@ -166,16 +243,16 @@ export function ForexBullionWidget({ totalLiquidPaisa }: ForexBullionWidgetProps
                   <strong style={{ fontSize: "11px", color: "#0f172a" }}>{curr.code}</strong>
                 </div>
                 <strong style={{ fontSize: "13px", color: "#1e293b", display: "block", marginTop: "2px" }}>
-                  Rs {(Number(curr.ratePkrPaisa) / 100).toFixed(2)}
+                  Rs. {curr.ratePkrRupees.toFixed(2)}
                 </strong>
                 <span
                   style={{
                     fontSize: "9px",
-                    fontWeight: 600,
-                    color: curr.dailyChangePct >= 0 ? "#16a34a" : "#dc2626",
+                    fontWeight: 650,
+                    color: curr.changePercent >= 0 ? "#16a34a" : "#dc2626",
                   }}
                 >
-                  {curr.dailyChangePct >= 0 ? `+${curr.dailyChangePct}%` : `${curr.dailyChangePct}%`}
+                  {curr.changePercent >= 0 ? `+${curr.changePercent}%` : `${curr.changePercent}%`}
                 </span>
               </div>
             ))}

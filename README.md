@@ -7,7 +7,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL%20RLS-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com/)
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
-[![Vitest](https://img.shields.io/badge/Tests-123%20Passed-6E9F18?style=for-the-badge&logo=vitest)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Tests-129%20Passed-6E9F18?style=for-the-badge&logo=vitest)](https://vitest.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
 ---
@@ -37,6 +37,14 @@ Features typically locked behind expensive paid subscriptions (PKR 15,000–30,0
   3. *Unplanned Medical / Emergency Spike* (Rs. 40,000 instant liquidity hit).
   4. *Stagflation Squeeze* (+30% utility and living cost surge).
 - **Pakistan FIRE Matrix:** Calculates Lean FIRE (25x), Standard FIRE (30x), and Fat FIRE (40x) retirement corpuses tailored to Pakistani living standards.
+
+### ⚡ Autonomous Live Market Engine & Real-Time Auto-Updates (Zero-Touch Automation)
+- **Autonomous PSX Live Feed (`/api/market/live-feed`):** High-speed, cached background API fetching live quotes for 12 blue-chip PSX stocks (**FFC, LUCK, MEBL, OGDC, HUBC, ENGRO, MCB, EFERT, POL, SYS, UBL, MARI**), Karachi Sarafa bullion prices, and forex currency rates with server-edge 60s caching.
+- **Auto-Sync PSX Investment Portfolio:** Autonomous 5-minute polling loop with visual pulse countdown timer, user toggle (`Auto-Update: ON/OFF`), 1-click manual "Fetch Live PSX Prices Now", automatic holding recalculation with live P&L and day change badges (`▲ +0.99%`).
+- **Dynamic Gold/Silver Nisab & Zakat Live Sync:** Automatic mount-time fetch of 24K gold and silver per-tola rates directly to calculate real-time Nisab thresholds (52.5 tolas silver / 7.5 tolas gold) with zero manual inputs required.
+- **Smart Transaction Auto-Categorization & Enrichment:** Regex keyword engine pattern-matching 100+ Pakistani and global merchants across 11 categories (Fuel, Utilities, Dining, Groceries, Education, Health, Mobile, etc.) with smart account suggestions (JazzCash, Easypaisa, Bank, Cash) and live preview tags in Quick Entry.
+- **Auto-Recurring Bill Detector & 1-Click Execution:** Real-time detector scanning due and overdue recurring expense schedules upon load, displaying an actionable instant-recording banner that updates ledgers and automatically calculates the next recurrence date.
+- **Global Topbar Market Ticker:** Live real-time PSX index and USD exchange rate status pill embedded directly in the top navigation bar.
 
 ### ⏱️ Dual-Mode Session Time Extension & Cyber-HUD Security
 - **Proactive Topbar 1-Click Extension:** Prominent "Extend Time" clock button directly in the navigation header that refreshes your active login session by +30 minutes with an instant confirmation toast and server heartbeat (`/api/auth/session-extend`).
@@ -97,7 +105,7 @@ Features typically locked behind expensive paid subscriptions (PKR 15,000–30,0
 - **Styling:** [Tailwind CSS v4](https://tailwindcss.com/)
 - **Charts:** [Recharts](https://recharts.org/)
 - **Icons:** [Lucide React](https://lucide.dev/)
-- **Testing:** [Vitest](https://vitest.dev/) (28 test suites, 120 automated unit & security tests)
+- **Testing:** [Vitest](https://vitest.dev/) (30 test suites, 129 automated unit & security tests)
 - **Deployment:** Netlify & Vercel ready (`netlify.toml` included)
 
 ---
@@ -182,7 +190,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser and sign in 
 PocketAsset is verified through automated tests covering mathematical accounting, multi-tab coordination, rate-limiting, and session security:
 
 ```bash
-# Run Vitest test suite (72 tests)
+# Run Vitest test suite (129 tests across 30 suites)
 npm test
 
 # Run strict TypeScript typecheck

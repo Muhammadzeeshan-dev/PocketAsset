@@ -5737,3 +5737,248 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     font-size: 11px;
   }
 }
+
+
+/* ==========================================================================
+   AUTONOMOUS REAL-TIME MARKET AUTO-SYNC & AUTO-ENRICHMENT STYLES
+   ========================================================================== */
+
+/* 1. PSX LIVE AUTO-SYNC BANNER (INVESTMENT PORTFOLIO) */
+.psx-auto-sync-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #091224 0%, #0f1d3a 100%);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  color: #ffffff;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.sync-banner-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 260px;
+}
+
+.live-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #38bdf8;
+}
+
+.live-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.live-dot-pulse {
+  background: #10b981;
+  box-shadow: 0 0 10px #10b981;
+  animation: pulseDot 1.4s infinite ease-in-out;
+}
+
+.live-dot-off {
+  background: #64748b;
+  box-shadow: none;
+}
+
+.sync-meta-text {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.sync-time-badge {
+  font-size: 10px;
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.sync-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sync-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sync-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.sync-toggle-btn.active {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+
+.sync-fetch-now-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 14px;
+}
+
+.live-stock-change-pill {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* 2. TOPBAR LIVE MARKET TICKER PILL */
+.topbar-market-ticker-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #ffffff;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.topbar-market-ticker-pill:hover {
+  border-color: #3b82f6;
+  background: #1e293b;
+  transform: translateY(-1px);
+}
+
+.ticker-divider {
+  color: #475569;
+  font-weight: 400;
+}
+
+.ticker-code {
+  color: #e2e8f0;
+}
+
+/* 3. DUE RECURRING BILLS AUTO-DETECTOR ALERT BANNER */
+.due-bills-auto-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 18px;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.08);
+  flex-wrap: wrap;
+}
+
+.due-bills-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 260px;
+}
+
+.due-bills-left strong {
+  display: block;
+  font-size: 13px;
+  color: #92400e;
+  font-weight: 800;
+}
+
+.due-bills-left span {
+  font-size: 11px;
+  color: #b45309;
+}
+
+.auto-record-bill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: #d97706 !important;
+  border-color: #b45309 !important;
+  color: #ffffff !important;
+  font-size: 11px;
+  font-weight: 750;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.2);
+}
+
+.auto-record-bill-btn:hover {
+  background: #b45309 !important;
+}
+
+/* 4. DIALOG AUTO-ENRICHMENT PILL */
+.dialog-auto-enrich-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  font-size: 10px;
+  font-weight: 600;
+  color: #1e40af;
+  margin: -4px 0 8px;
+  animation: idleFadeIn 0.15s ease-out;
+}
+
+.dialog-auto-enrich-pill strong {
+  color: #1d4ed8;
+}
+
+.dialog-auto-enrich-pill em {
+  font-style: normal;
+  text-transform: capitalize;
+  color: #059669;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .psx-auto-sync-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px;
+  }
+  .sync-banner-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .due-bills-auto-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px;
+  }
+  .auto-record-bill-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

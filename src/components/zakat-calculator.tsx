@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   AlertCircle,
@@ -11,15 +11,18 @@ import {
   Landmark,
   Moon,
   Plus,
+  Radio,
   RefreshCw,
   Scale,
   ShieldCheck,
   Sparkles,
   X,
+  Zap,
 } from "lucide-react";
 import { formatPkr, parseRupeesToPaisa, type FinanceAccount, type FinanceTransaction } from "@/lib/finance";
 import { calculateZakat, DEFAULT_ZAKAT_RATES, type ZakatRates } from "@/lib/zakat";
 import type { Asset, Liability } from "@/lib/assets";
+import { fetchLiveMarketData } from "@/lib/market-feed";
 
 interface ZakatCalculatorProps {
   userId: string;
@@ -53,10 +56,27 @@ export function ZakatCalculator({
   onToast,
 }: ZakatCalculatorProps) {
   const [rates, setRates] = useState<ZakatRates>(DEFAULT_ZAKAT_RATES);
-  const [silverTolaInput, setSilverTolaInput] = useState("3300");
-  const [goldTolaInput, setGoldTolaInput] = useState("280000");
+  const [silverTolaInput, setSilverTolaInput] = useState("3350");
+  const [goldTolaInput, setGoldTolaInput] = useState("282500");
   const [nisabStandard, setNisabStandard] = useState<"silver" | "gold">("silver");
   const [stockPercentage, setStockPercentage] = useState(30);
+  const [liveBullionSynced, setLiveBullionSynced] = useState(false);
+
+  // Auto-fetch live Sarafa bullion rates on mount
+  useEffect(() => {
+    void (async () => {
+      try {
+        const feed = await fetchLiveMarketData();
+        if (feed.bullion) {
+          setSilverTolaInput(String(feed.bullion.silverTolaRupees));
+          setGoldTolaInput(String(feed.bullion.gold24kTolaRupees));
+          setLiveBullionSynced(true);
+        }
+      } catch {
+        // use default
+      }
+    })();
+  }, []);
 
   // Zakat paid records
   const [payments, setPayments] = useState<ZakatPayment[]>([]);
@@ -172,6 +192,14 @@ export function ZakatCalculator({
         }}
       >
         <div>
+          {liveBullionSynced && (
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "2px 8px", borderRadius: "6px", background: "rgba(5, 150, 105, 0.12)", border: "1px solid rgba(5, 150, 105, 0.25)", marginBottom: "8px" }}>
+              <span className="live-status-dot live-dot-pulse" />
+              <span style={{ fontSize: "10px", fontWeight: 750, color: "#047857" }}>
+                LIVE SARAFA RATES AUTO-SYNCED (SILVER: Rs. {Number(silverTolaInput).toLocaleString()} • GOLD: Rs. {Number(goldTolaInput).toLocaleString()})
+              </span>
+            </div>
+          )}
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
             {zakat.isEligibleForZakat ? (
               <span style={{ fontSize: "12px", fontWeight: 700, padding: "3px 10px", borderRadius: "12px", background: "#059669", color: "#ffffff" }}>
