@@ -59,11 +59,11 @@ export function SessionWarningModal({
   const isWarning = secondsRemaining <= 30;
 
   // SVG Circular countdown geometry
-  const radius = 54;
-  const circumference = 2 * Math.PI * radius; // ~339.29
+  const radius = 52;
+  const circumference = 2 * Math.PI * radius; // ~326.73
   const strokeDashoffset = circumference * (1 - Math.max(0, Math.min(60, secondsRemaining)) / 60);
 
-  const ringStroke = isUrgent ? "#ef4444" : isWarning ? "#f59e0b" : "#38bdf8";
+  const ringStroke = isUrgent ? "#f43f5e" : isWarning ? "#f59e0b" : "#38bdf8";
 
   return (
     <div
@@ -73,99 +73,101 @@ export function SessionWarningModal({
       aria-labelledby="session-idle-title"
     >
       <div className={`session-idle-card ${isUrgent ? "urgent" : ""}`}>
-        {/* Futuristic Header Beacon */}
-        <div className="session-idle-header">
-          <div className={`idle-beacon-pill ${isUrgent ? "urgent" : ""}`}>
-            <span className="beacon-dot" />
-            <span>{isUrgent ? "URGENT LOGOUT IMMINENT" : "SESSION SECURITY GUARD"}</span>
-          </div>
-          <div className="beacon-icon">
-            {isUrgent ? <ShieldAlert size={18} color="#ef4444" /> : <Clock size={18} color="#38bdf8" />}
-          </div>
+        {/* Security Badge Beacon */}
+        <div className="idle-security-badge">
+          <span className="security-badge-pulse" />
+          <span>{isUrgent ? "URGENT LOGOUT IMMINENT" : "SESSION INACTIVITY GUARD"}</span>
+          {isUrgent ? <ShieldAlert size={14} color="#f43f5e" /> : <Clock size={14} color="#38bdf8" />}
+        </div>
+
+        {/* Futuristic Header & Title */}
+        <div className="idle-header">
+          <h2 id="session-idle-title" className="idle-title">Are you still working?</h2>
+          <p className="idle-desc">
+            No activity detected. To protect your financial accounts and confidential records, PocketAsset will automatically log out in <strong>{secondsRemaining} seconds</strong>.
+          </p>
         </div>
 
         {/* Circular Radial Countdown HUD */}
         <div className="idle-radar-wrap">
-          <svg className="idle-svg-ring" width="136" height="136" viewBox="0 0 136 136">
+          <svg className="idle-svg-ring" width="128" height="128" viewBox="0 0 128 128">
             <circle
-              className="idle-track-circle"
-              cx="68"
-              cy="68"
+              className="idle-ring-track"
+              cx="64"
+              cy="64"
               r={radius}
-              strokeWidth="7"
+              strokeWidth="6"
+              fill="transparent"
             />
             <circle
               className="idle-progress-circle"
-              cx="68"
-              cy="68"
+              cx="64"
+              cy="64"
               r={radius}
-              strokeWidth="7"
+              strokeWidth="6"
+              fill="transparent"
               stroke={ringStroke}
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
+              transform="rotate(-90 64 64)"
             />
           </svg>
-          <div className="idle-timer-center">
+          <div className="idle-ring-center">
             <strong className={`idle-countdown-number ${isUrgent ? "urgent" : ""}`}>
               {secondsRemaining}
             </strong>
-            <span className="idle-countdown-unit">SECONDS</span>
+            <span className="idle-countdown-sec">SECONDS</span>
           </div>
         </div>
 
-        {/* Warning Copy */}
-        <div className="idle-copy-block">
-          <h2 id="session-idle-title">Are you still with us?</h2>
-          <p>
-            No user activity detected for your chosen duration. To protect your financial accounts and ledger data, PocketAsset will securely lock this session in <strong>{secondsRemaining} seconds</strong>.
-          </p>
-        </div>
-
-        {/* Futuristic Action Buttons */}
-        <div className="idle-action-buttons">
+        {/* Action Buttons: Extend Time / Keep Working / Logout */}
+        <div className="idle-actions-stack">
           <button
             id="extend-session-btn"
             type="button"
-            className={`idle-primary-extend-btn ${isUrgent ? "urgent" : ""}`}
+            className="idle-primary-extend-btn"
             onClick={onExtend}
             disabled={isExtending}
           >
             {isExtending ? (
               <>
-                <RefreshCw size={16} className="spin" />
+                <RefreshCw size={15} className="spin" />
                 <span>Extending Session…</span>
               </>
             ) : (
               <>
-                <Zap size={16} />
-                <span>Extend Session (+30 Mins)</span>
+                <Zap size={15} />
+                <span>Extend Time (+30 Mins)</span>
               </>
             )}
           </button>
 
-          <button
-            type="button"
-            className="idle-keep-working-btn"
-            onClick={onExtend}
-            disabled={isExtending}
-          >
-            <CheckCircle2 size={15} />
-            <span>Keep Working (+60s)</span>
-          </button>
+          <div className="idle-secondary-actions">
+            <button
+              type="button"
+              className="idle-keep-working-btn"
+              onClick={onExtend}
+              disabled={isExtending}
+            >
+              <CheckCircle2 size={13} />
+              <span>Keep Working (+60s)</span>
+            </button>
 
-          <button
-            type="button"
-            className="idle-signout-btn"
-            onClick={onLogout}
-          >
-            <LogOut size={14} />
-            <span>Sign Out Immediately</span>
-          </button>
+            <button
+              type="button"
+              className="idle-signout-btn"
+              onClick={onLogout}
+            >
+              <LogOut size={13} />
+              <span>Logout Now</span>
+            </button>
+          </div>
         </div>
 
-        <div className="idle-keyboard-hint">
-          <span>Tip: Press <code>[Space]</code> or <code>[Enter]</code> on keyboard to instantly extend time.</span>
+        {/* Keyboard Shortcut Hint */}
+        <div className="idle-footer-tip">
+          <span>Tip: Press <kbd className="idle-kbd">Space</kbd> or <kbd className="idle-kbd">Enter</kbd> to extend &bull; <kbd className="idle-kbd">Esc</kbd> to logout</span>
         </div>
       </div>
     </div>

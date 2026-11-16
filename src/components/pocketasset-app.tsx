@@ -393,6 +393,8 @@ export function PocketAssetApp({ section = "overview" }: { section?: AppSection 
           section={section}
           onSignedOut={() => handleLogout("user_logout")}
           onExtendSession={extendSession}
+          inactivityWarningOpen={isWarningOpen}
+          inactivitySecondsRemaining={secondsRemaining}
         />
       )}
 

@@ -68,11 +68,11 @@ export function SettingsPage({
   const [restoreMessage, setRestoreMessage] = useState("");
   const [restoreError, setRestoreError] = useState("");
 
-  // Inactivity auto-logout timer setting state (default 300s = 5m, or custom e.g. 60s)
+  // Inactivity auto-logout timer setting state (default 60s, or custom e.g. 120s, 300s)
   const [inactivityTimeoutSec, setInactivityTimeoutSec] = useState<number>(() => {
-    if (typeof window === "undefined" || !window.localStorage) return 300;
+    if (typeof window === "undefined" || !window.localStorage) return 60;
     const val = window.localStorage.getItem("pocketasset_inactivity_timeout_sec");
-    return val !== null ? Number(val) : 300;
+    return val !== null ? Number(val) : 60;
   });
 
   function handleSaveInactivityTimeout(sec: number) {
@@ -214,9 +214,9 @@ export function SettingsPage({
           </label>
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
             {[
-              { sec: 60, label: "60 Seconds (High Security)", hint: "Fastest security lock" },
+              { sec: 60, label: "60 Seconds (Recommended)", hint: "60s idle + 60s countdown lock" },
               { sec: 120, label: "2 Minutes", hint: "Short idle lock" },
-              { sec: 300, label: "5 Minutes (Recommended)", hint: "Standard balanced protection" },
+              { sec: 300, label: "5 Minutes", hint: "Standard protection" },
               { sec: 900, label: "15 Minutes", hint: "Extended workspace" },
               { sec: 1800, label: "30 Minutes", hint: "Long session" },
               { sec: 0, label: "Disabled", hint: "Stay logged in (Personal device only)" },

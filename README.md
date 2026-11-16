@@ -7,7 +7,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL%20RLS-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com/)
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
-[![Vitest](https://img.shields.io/badge/Tests-129%20Passed-6E9F18?style=for-the-badge&logo=vitest)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Tests-130%20Passed-6E9F18?style=for-the-badge&logo=vitest)](https://vitest.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
 ---
@@ -105,7 +105,7 @@ Features typically locked behind expensive paid subscriptions (PKR 15,000–30,0
 - **Styling:** [Tailwind CSS v4](https://tailwindcss.com/)
 - **Charts:** [Recharts](https://recharts.org/)
 - **Icons:** [Lucide React](https://lucide.dev/)
-- **Testing:** [Vitest](https://vitest.dev/) (30 test suites, 129 automated unit & security tests)
+- **Testing:** [Vitest](https://vitest.dev/) (30 test suites, 130 automated unit & security tests)
 - **Deployment:** Netlify & Vercel ready (`netlify.toml` included)
 
 ---
@@ -190,7 +190,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser and sign in 
 PocketAsset is verified through automated tests covering mathematical accounting, multi-tab coordination, rate-limiting, and session security:
 
 ```bash
-# Run Vitest test suite (129 tests across 30 suites)
+# Run Vitest test suite (130 tests across 30 suites)
 npm test
 
 # Run strict TypeScript typecheck

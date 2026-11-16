@@ -5962,7 +5962,39 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   font-weight: 700;
 }
 
+.topbar-inactivity-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  animation: urgentPulse 1.2s infinite;
+  white-space: nowrap;
+}
+
+.topbar-inactivity-pill:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.topbar-extend-urgent {
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
+  border-color: #fca5a5 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);
+}
+
 @media (max-width: 640px) {
+  .topbar-inactivity-pill {
+    padding: 3px 8px;
+    font-size: 10px;
+  }
   .psx-auto-sync-banner {
     flex-direction: column;
     align-items: flex-start;

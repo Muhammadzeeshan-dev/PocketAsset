@@ -254,7 +254,7 @@ export function useInactivityTimer({
       }, 0);
       return () => {
         window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("pocketasset_test_inactivity_warning", handleTestWarning);
+        window.removeEventListener("pocketasset_test_inactivity_warning", handleTestWarning);
         channelRef.current?.close();
       };
     } else if (initialElapsed >= timeoutMs) {

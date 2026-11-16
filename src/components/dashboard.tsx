@@ -125,6 +125,8 @@ type DashboardProps = {
   section: AppSection;
   onSignedOut: () => void;
   onExtendSession?: () => Promise<void> | void;
+  inactivityWarningOpen?: boolean;
+  inactivitySecondsRemaining?: number;
 };
 
 const accountIcon: Record<AccountType, typeof Wallet> = {
@@ -147,7 +149,15 @@ const accountTypeLabel: Record<AccountType, string> = {
 
 const categoryPalette = ["#2563eb", "#22a07a", "#f0a332", "#8767d9", "#ef7181", "#48a6bf"];
 
-export function Dashboard({ user, supabase, section, onSignedOut, onExtendSession }: DashboardProps) {
+export function Dashboard({
+  user,
+  supabase,
+  section,
+  onSignedOut,
+  onExtendSession,
+  inactivityWarningOpen = false,
+  inactivitySecondsRemaining = 60,
+}: DashboardProps) {
   const today = getPakistanDateKey(new Date());
   const [accounts, setAccounts] = useState<FinanceAccount[]>([]);
   const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
@@ -557,14 +567,25 @@ export function Dashboard({ user, supabase, section, onSignedOut, onExtendSessio
               <span className="ticker-divider">|</span>
               <span className="ticker-code">USD: 278.2</span>
             </Link>
+            {inactivityWarningOpen && (
+              <div
+                className="topbar-inactivity-pill"
+                onClick={() => void handleManualExtendSession()}
+                style={{ cursor: "pointer" }}
+                title="Inactivity warning! Click to extend session by 30 minutes"
+              >
+                <span className="live-status-dot red live-dot-pulse" />
+                <span>Auto-Logout in {inactivitySecondsRemaining}s</span>
+              </div>
+            )}
             <button
               type="button"
-              className="outline-button topbar-text-btn topbar-extend-btn"
+              className={`outline-button topbar-text-btn topbar-extend-btn ${inactivityWarningOpen ? "topbar-extend-urgent" : ""}`}
               onClick={() => void handleManualExtendSession()}
               title="Extend session inactivity timer by 30 minutes"
             >
-              <Clock size={13} className="extend-clock-icon" />
-              <span>Extend Time</span>
+              <Clock size={13} className={`extend-clock-icon ${inactivityWarningOpen ? "animate-spin text-red" : ""}`} />
+              <span>{inactivityWarningOpen ? `Extend Time (+30m)` : "Extend Time"}</span>
             </button>
             <button
               type="button"
