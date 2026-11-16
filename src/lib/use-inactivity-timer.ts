@@ -64,6 +64,7 @@ export function useInactivityTimer({
   const channelRef = useRef<BroadcastChannel | null>(null);
   const lastActiveRef = useRef<number>(0);
   const lastThrottleRef = useRef<number>(0);
+  const lastDiskSyncRef = useRef<number>(0);
   const warningOpenRef = useRef<boolean>(false);
   const onLogoutRef = useRef(onLogout);
 
@@ -265,7 +266,10 @@ export function useInactivityTimer({
       }, 0);
     }
 
-    // Genuine user interaction listener (throttled to at most once per 400ms)
+    // Genuine user interaction listener:
+    // Update in-memory activity timestamp with high responsiveness, but throttle synchronous disk (localStorage)
+    // and IPC (BroadcastChannel) writes to at most once per 5 seconds on deliberate user actions (click, keydown, touchstart).
+    // High-frequency continuous events (mousemove, scroll) only update the in-memory timestamp to eliminate frame drops and main-thread lag!
     const handleUserInteraction = (evt?: Event) => {
       // If banner is already open, purposeful interactions (click, keydown) automatically extend session
       if (warningOpenRef.current) {
@@ -276,19 +280,27 @@ export function useInactivityTimer({
       }
 
       const currentTime = Date.now();
-      if (currentTime - lastThrottleRef.current < 400) {
+      // Fast in-memory update (throttled to at most once per 1,000ms)
+      if (currentTime - lastThrottleRef.current < 1000) {
         return;
       }
       lastThrottleRef.current = currentTime;
       lastActiveRef.current = currentTime;
 
-      try {
-        localStorage.setItem(STORAGE_KEY_LAST_ACTIVE, String(currentTime));
-        if (channelRef.current) {
-          channelRef.current.postMessage({ type: "ACTIVITY", timestamp: currentTime } satisfies BroadcastMessage);
+      // Only perform disk write (localStorage.setItem) and BroadcastChannel postMessage for purposeful actions,
+      // throttled to at most once every 5,000ms (5 seconds).
+      // Continuous events like 'mousemove' and 'scroll' are excluded from disk I/O to ensure 60fps smooth scrolling.
+      const isPurposeful = !evt || (evt.type !== "mousemove" && evt.type !== "scroll");
+      if (isPurposeful && currentTime - lastDiskSyncRef.current >= 5000) {
+        lastDiskSyncRef.current = currentTime;
+        try {
+          localStorage.setItem(STORAGE_KEY_LAST_ACTIVE, String(currentTime));
+          if (channelRef.current) {
+            channelRef.current.postMessage({ type: "ACTIVITY", timestamp: currentTime } satisfies BroadcastMessage);
+          }
+        } catch {
+          // ignore
         }
-      } catch {
-        // ignore
       }
     };
 

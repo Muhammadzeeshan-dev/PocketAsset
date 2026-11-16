@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import type { User, SupabaseClient } from "@supabase/supabase-js";
 import Link from "next/link";
 import {
@@ -171,6 +171,7 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
   const [hideBalances, setHideBalances] = useState(false);
   const [toast, setToast] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const directSupabaseAvailableRef = useRef<boolean | null>(null);
 
   const openEntry = useCallback((kind: EntryKind, preset?: { description: string; category: string }) => {
     setEntryPreset(preset ?? null);
@@ -181,44 +182,62 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
     if (quiet) setRefreshing(true);
     else setLoading(true);
     setLoadError("");
-    try {
-      const { data: accountRows, error: accountError } = await supabase
-        .from("account_balances")
-        .select("*")
-        .order("created_at", { ascending: true });
-      if (accountError) throw accountError;
 
-      const transactionRows: FinanceTransaction[] = [];
-      let offset = 0;
-      const pageSize = 1000;
-      while (true) {
-        const { data, error } = await supabase
-          .from("transactions")
+    let loaded = false;
+
+    // Fast path: if direct client hasn't failed before, attempt direct Supabase query
+    if (directSupabaseAvailableRef.current !== false) {
+      try {
+        const { data: accountRows, error: accountError } = await supabase
+          .from("account_balances")
           .select("*")
-          .is("deleted_at", null)
-          .order("occurred_at", { ascending: true })
-          .range(offset, offset + pageSize - 1);
-        if (error) throw error;
-        const page = (data ?? []) as FinanceTransaction[];
-        transactionRows.push(...page);
-        if (page.length < pageSize) break;
-        offset += pageSize;
-      }
+          .order("created_at", { ascending: true });
+        if (accountError) {
+          directSupabaseAvailableRef.current = false;
+          throw accountError;
+        }
 
-      const accountData = (accountRows ?? []) as FinanceAccount[];
-      const pending = await getPendingTransactions(user.id).catch(() => []);
-      const knownIds = new Set(transactionRows.map((transaction) => transaction.id));
-      const mergedTransactions = [...transactionRows, ...pending.filter((transaction) => !knownIds.has(transaction.id))];
-      await cacheFinancialData(user.id, accountData, mergedTransactions).catch(() => undefined);
-      setAccounts(accountData);
-      setTransactions(mergedTransactions);
-      setOffline(!navigator.onLine);
-      setDataAvailable(true);
+        const transactionRows: FinanceTransaction[] = [];
+        let offset = 0;
+        const pageSize = 1000;
+        while (true) {
+          const { data, error } = await supabase
+            .from("transactions")
+            .select("*")
+            .is("deleted_at", null)
+            .order("occurred_at", { ascending: true })
+            .range(offset, offset + pageSize - 1);
+          if (error) {
+            directSupabaseAvailableRef.current = false;
+            throw error;
+          }
+          const page = (data ?? []) as FinanceTransaction[];
+          transactionRows.push(...page);
+          if (page.length < pageSize) break;
+          offset += pageSize;
+        }
 
-      if (navigator.onLine && pending.length) {
-        void syncPendingTransactions(user.id, supabase, pending);
+        directSupabaseAvailableRef.current = true;
+        const accountData = (accountRows ?? []) as FinanceAccount[];
+        const pending = await getPendingTransactions(user.id).catch(() => []);
+        const knownIds = new Set(transactionRows.map((transaction) => transaction.id));
+        const mergedTransactions = [...transactionRows, ...pending.filter((transaction) => !knownIds.has(transaction.id))];
+        await cacheFinancialData(user.id, accountData, mergedTransactions).catch(() => undefined);
+        setAccounts(accountData);
+        setTransactions(mergedTransactions);
+        setOffline(!navigator.onLine);
+        setDataAvailable(true);
+        loaded = true;
+
+        if (navigator.onLine && pending.length) {
+          void syncPendingTransactions(user.id, supabase, pending);
+        }
+      } catch {
+        // Direct query failed (e.g. 42501 or offline) -> fall through to server API
       }
-    } catch (caught) {
+    }
+
+    if (!loaded) {
       let serverFallbackSuccess = false;
       try {
         const fallbackRes = await fetch("/api/finance/data");
@@ -233,13 +252,17 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
               ...t,
               amount_paisa: String(t.amount_paisa || 0),
             }));
-            await cacheFinancialData(user.id, parsedAccounts, parsedTxs).catch(() => undefined);
+            const pending = await getPendingTransactions(user.id).catch(() => []);
+            const knownIds = new Set(parsedTxs.map((transaction) => transaction.id));
+            const mergedTransactions = [...parsedTxs, ...pending.filter((transaction) => !knownIds.has(transaction.id))];
+            await cacheFinancialData(user.id, parsedAccounts, mergedTransactions).catch(() => undefined);
             setAccounts(parsedAccounts);
-            setTransactions(parsedTxs);
+            setTransactions(mergedTransactions);
             setDataAvailable(true);
             setOffline(false);
             setLoadError("");
             serverFallbackSuccess = true;
+            loaded = true;
           }
         }
       } catch {
@@ -264,13 +287,13 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
           setLoadError("");
         } else {
           setDataAvailable(false);
-          setLoadError(caught instanceof Error ? caught.message : "The finance data could not be loaded.");
+          setLoadError("The finance data could not be loaded.");
         }
       }
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
     }
+
+    setLoading(false);
+    setRefreshing(false);
   }, [supabase, user.id]);
 
   useEffect(() => {
@@ -1242,6 +1265,28 @@ function QuickEntryDialog({ kind, initialPreset, accounts, userId, selectedDate,
             return;
           }
         }
+
+        // Attempt server API fallback if 42501 or network error
+        try {
+          const serverRes = await fetch("/api/finance/data", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "insert_transaction", transaction }),
+          });
+          if (serverRes.ok) {
+            const serverJson = await serverRes.json();
+            if (serverJson.success) {
+              await removePendingTransaction(userId, transaction.id).catch(() => undefined);
+              onSaved(kind === "transfer" ? "Transfer recorded. It was not counted as income or expense."
+                : kind === "refund" || kind === "investment_sale" ? "Transaction recorded as cash received, separate from ordinary income."
+                  : kind === "adjustment" ? "Balance adjustment recorded." : "Transaction recorded.");
+              return;
+            }
+          }
+        } catch {
+          // continue to transient check
+        }
+
         const status = (insertError as { status?: number }).status;
         const isTransient = !insertError.code || (status !== undefined && status >= 500);
         if (isTransient) {
@@ -1270,19 +1315,22 @@ function QuickEntryDialog({ kind, initialPreset, accounts, userId, selectedDate,
         <div className="preset-chips-wrap">
           <span className="preset-chips-label">Quick purchase presets:</span>
           <div className="preset-chips">
-            {EXPENSE_PRESETS.map((p) => (
-              <button
-                key={p.label}
-                type="button"
-                className="preset-chip"
-                onClick={() => {
-                  setDescription(p.name);
-                  setCategory(p.category);
-                }}
-              >
-                {p.label}
-              </button>
-            ))}
+            {EXPENSE_PRESETS.map((p) => {
+              const isSelected = description === p.name && category === p.category;
+              return (
+                <button
+                  key={p.label}
+                  type="button"
+                  className={`preset-chip ${isSelected ? "active" : ""}`}
+                  onClick={() => {
+                    setDescription(p.name);
+                    setCategory(p.category);
+                  }}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -1290,19 +1338,22 @@ function QuickEntryDialog({ kind, initialPreset, accounts, userId, selectedDate,
         <div className="preset-chips-wrap">
           <span className="preset-chips-label">Quick income sources:</span>
           <div className="preset-chips">
-            {INCOME_PRESETS.map((p) => (
-              <button
-                key={p.label}
-                type="button"
-                className="preset-chip"
-                onClick={() => {
-                  setDescription(p.name);
-                  setCategory(p.category);
-                }}
-              >
-                {p.label}
-              </button>
-            ))}
+            {INCOME_PRESETS.map((p) => {
+              const isSelected = description === p.name && category === p.category;
+              return (
+                <button
+                  key={p.label}
+                  type="button"
+                  className={`preset-chip ${isSelected ? "active" : ""}`}
+                  onClick={() => {
+                    setDescription(p.name);
+                    setCategory(p.category);
+                  }}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -1356,19 +1407,38 @@ function AccountDialog({ userId, supabase, onClose, onCreated }: {
       return;
     }
     setBusy(true);
-    const { error: insertError } = await supabase.from("accounts").insert({
+    const accountRecord = {
       user_id: userId,
       name: name.trim(),
       account_type: accountType,
       opening_balance_paisa: openingPaisa.toString(),
       currency: "PKR",
       is_active: true,
-    });
-    setBusy(false);
+    };
+    const { error: insertError } = await supabase.from("accounts").insert(accountRecord);
     if (insertError) {
+      try {
+        const res = await fetch("/api/finance/data", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "create_account", account: accountRecord }),
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) {
+            setBusy(false);
+            onCreated();
+            return;
+          }
+        }
+      } catch {
+        // continue
+      }
+      setBusy(false);
       setError(insertError.message);
       return;
     }
+    setBusy(false);
     onCreated();
   }
 
@@ -1403,7 +1473,9 @@ function Modal({ title, subtitle, onClose, children }: { title: string; subtitle
   return <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
     <section className="dialog-card" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
       <div className="dialog-heading"><div><p className="panel-kicker">PocketAsset ledger</p><h2 id="dialog-title">{title}</h2><p>{subtitle}</p></div><button type="button" className="icon-button dialog-close" aria-label="Close dialog" onClick={onClose}><X size={18} /></button></div>
-      {children}
+      <div className="dialog-scroll-body">
+        {children}
+      </div>
     </section>
   </div>;
 }
@@ -1954,7 +2026,7 @@ function TransactionCorrectionDialog({ transaction, accounts, userId, supabase, 
       return;
     }
     setBusy(true);
-    const { error: updateError } = await supabase.from("transactions").update({
+    const updates = {
       description: description.trim(),
       amount_paisa: amountPaisa.toString(),
       category: category.trim() || null,
@@ -1966,12 +2038,31 @@ function TransactionCorrectionDialog({ transaction, accounts, userId, supabase, 
       direction: transaction.transaction_type === "adjustment" ? direction : transaction.direction,
       expense_classification: transaction.transaction_type === "expense" ? expenseClassification : transaction.expense_classification ?? null,
       quantity: transaction.transaction_type === "expense" ? quantity.trim() || null : transaction.quantity ?? null,
-    }).eq("id", transaction.id).eq("user_id", userId);
-    setBusy(false);
+    };
+    const { error: updateError } = await supabase.from("transactions").update(updates).eq("id", transaction.id).eq("user_id", userId);
     if (updateError) {
+      try {
+        const res = await fetch("/api/finance/data", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "update_transaction", transaction: { id: transaction.id, user_id: userId, ...updates } }),
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) {
+            setBusy(false);
+            onSaved("Transaction corrected. The audit trail records the change.");
+            return;
+          }
+        }
+      } catch {
+        // continue
+      }
+      setBusy(false);
       setError(updateError.message);
       return;
     }
+    setBusy(false);
     onSaved("Transaction corrected. The audit trail records the change.");
   }
 
@@ -2010,11 +2101,29 @@ function DeleteTransactionDialog({ transaction, userId, supabase, onClose, onDel
     setError("");
     const now = new Date().toISOString();
     const { error: deleteError } = await supabase.from("transactions").update({ deleted_at: now, updated_at: now }).eq("id", transaction.id).eq("user_id", userId);
-    setBusy(false);
     if (deleteError) {
+      try {
+        const res = await fetch("/api/finance/data", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "delete_transaction", id: transaction.id, userId }),
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) {
+            setBusy(false);
+            onDeleted("Transaction removed from current totals. Its deletion remains in the audit trail.");
+            return;
+          }
+        }
+      } catch {
+        // continue
+      }
+      setBusy(false);
       setError(deleteError.message);
       return;
     }
+    setBusy(false);
     onDeleted("Transaction removed from current totals. Its deletion remains in the audit trail.");
   }
 

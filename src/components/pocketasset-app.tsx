@@ -186,7 +186,7 @@ export function PocketAssetApp({ section = "overview" }: { section?: AppSection 
     };
   }, [browserClient]);
 
-  // Real-time periodic session revocation verification
+  // Real-time periodic session revocation verification (optimized: 60s + tab focus check)
   const sidRef = useRef(sessionId);
   useEffect(() => {
     sidRef.current = sessionId;
@@ -195,13 +195,16 @@ export function PocketAssetApp({ section = "overview" }: { section?: AppSection 
   useEffect(() => {
     if (!user) return;
     let active = true;
+    let lastChecked = Date.now();
 
     async function checkSession() {
       try {
-        const sid = sidRef.current || "sess-current";
-        // Skip polling if offline
+        // Skip polling if document is hidden or offline to conserve network and CPU
+        if (typeof document !== "undefined" && document.hidden) return;
         if (typeof navigator !== "undefined" && !navigator.onLine) return;
 
+        const sid = sidRef.current || "sess-current";
+        lastChecked = Date.now();
         const res = await fetch(`/api/auth/session-status?sessionId=${encodeURIComponent(sid)}`);
         if (res.status === 401 && active) {
           const data = await res.json().catch(() => ({}));
@@ -214,10 +217,25 @@ export function PocketAssetApp({ section = "overview" }: { section?: AppSection 
       }
     }
 
-    const interval = setInterval(checkSession, 15000);
+    // Polled every 60s when active (instead of 15s) to eliminate background network contention
+    const interval = setInterval(checkSession, 60000);
+
+    // Immediate check when user tabs back into the app if more than 30s have elapsed
+    const onVisibilityChange = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible" && Date.now() - lastChecked > 30000) {
+        void checkSession();
+      }
+    };
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibilityChange);
+    }
+
     return () => {
       active = false;
       clearInterval(interval);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+      }
     };
   }, [user, handleLogout]);
 
