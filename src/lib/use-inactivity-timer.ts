@@ -2,20 +2,37 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 
-const DEFAULT_INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes idle before top banner triggers
+const DEFAULT_INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes idle before warning banner
 const REMEMBERED_INACTIVITY_TIMEOUT_MS = 24 * 60 * 60 * 1000; // 24 hours idle for remembered devices
-const WARNING_COUNTDOWN_SEC = 120; // 120 seconds (2 minutes) countdown
-const TOTAL_EXPIRY_MS = DEFAULT_INACTIVITY_TIMEOUT_MS + WARNING_COUNTDOWN_SEC * 1000; // 32 minutes total
+export const WARNING_COUNTDOWN_SEC = 60; // 60 seconds (1 minute) countdown
+export const STORAGE_KEY_CUSTOM_TIMEOUT = "pocketasset_inactivity_timeout_sec";
+const TOTAL_EXPIRY_MS = DEFAULT_INACTIVITY_TIMEOUT_MS + WARNING_COUNTDOWN_SEC * 1000; // 6 minutes total
 
 export function getInactivityConfig() {
   const isRemembered =
     typeof window !== "undefined" &&
     window.localStorage?.getItem("pocketasset_remember_me") === "true";
-  const timeoutMs = isRemembered
-    ? REMEMBERED_INACTIVITY_TIMEOUT_MS
-    : DEFAULT_INACTIVITY_TIMEOUT_MS;
+
+  let timeoutMs = DEFAULT_INACTIVITY_TIMEOUT_MS;
+
+  if (typeof window !== "undefined" && window.localStorage) {
+    const custom = window.localStorage.getItem(STORAGE_KEY_CUSTOM_TIMEOUT);
+    if (custom !== null) {
+      const parsedSec = Number(custom);
+      if (!isNaN(parsedSec)) {
+        if (parsedSec === 0) {
+          timeoutMs = REMEMBERED_INACTIVITY_TIMEOUT_MS;
+        } else {
+          timeoutMs = parsedSec * 1000;
+        }
+      }
+    } else if (isRemembered) {
+      timeoutMs = REMEMBERED_INACTIVITY_TIMEOUT_MS;
+    }
+  }
+
   const totalMs = timeoutMs + WARNING_COUNTDOWN_SEC * 1000;
-  return { timeoutMs, totalMs, isRemembered };
+  return { timeoutMs, totalMs, isRemembered, countdownSec: WARNING_COUNTDOWN_SEC };
 }
 
 const STORAGE_KEY_LAST_ACTIVE = "pocketasset_last_active";
@@ -191,6 +208,14 @@ export function useInactivityTimer({
     };
     window.addEventListener("storage", handleStorageChange);
 
+    // Live test event listener for testing 60s auto-logout from Settings
+    const handleTestWarning = () => {
+      warningOpenRef.current = true;
+      setSecondsRemaining(60);
+      setIsWarningOpen(true);
+    };
+    window.addEventListener("pocketasset_test_inactivity_warning", handleTestWarning);
+
     // Initial check on mount/refresh: compute elapsed time
     const storedLast = localStorage.getItem(STORAGE_KEY_LAST_ACTIVE);
     const now = Date.now();
@@ -228,6 +253,7 @@ export function useInactivityTimer({
       }, 0);
       return () => {
         window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("pocketasset_test_inactivity_warning", handleTestWarning);
         channelRef.current?.close();
       };
     } else if (initialElapsed >= timeoutMs) {
@@ -321,6 +347,7 @@ export function useInactivityTimer({
         window.removeEventListener(evt, handleUserInteraction);
       });
       window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("pocketasset_test_inactivity_warning", handleTestWarning);
       if (channelRef.current) {
         channelRef.current.close();
         channelRef.current = null;

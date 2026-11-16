@@ -2352,11 +2352,17 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .pro-nav-tabs {
   display: flex;
   gap: 8px;
-  padding: 4px;
+  padding: 6px;
   background: #f1f5f9;
   border-radius: 10px;
   border: 1px solid #e2e8f0;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.pro-nav-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .pro-tab-button {
@@ -2373,6 +2379,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
 .pro-tab-button:hover {
@@ -2395,7 +2402,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 .pro-feature-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
   gap: 16px;
 }
 
@@ -2655,7 +2662,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 /* Monte Carlo Banner */
 .monte-carlo-milestone-banner {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
   gap: 12px;
 }
 
@@ -2700,21 +2707,100 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .slider-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .slider-label-row {
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
+  align-items: center;
+  font-size: 12px;
   font-weight: 600;
   color: #334155;
 }
 
-.pro-range {
-  width: 100%;
-  accent-color: #2563eb;
+.slider-quick-presets {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.slider-preset-chip {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
   cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.slider-preset-chip:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.slider-preset-chip.active {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #93c5fd;
+  font-weight: 700;
+}
+
+.pro-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 6px;
+  background: #cbd5e1;
+  outline: none;
+  cursor: pointer;
+  margin: 8px 0;
+  touch-action: pan-y;
+  transition: background 0.15s ease;
+}
+
+.pro-range:hover {
+  background: #94a3b8;
+}
+
+.pro-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #2563eb;
+  cursor: pointer;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
+  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pro-range::-webkit-slider-thumb:hover,
+.pro-range::-webkit-slider-thumb:active {
+  transform: scale(1.15);
+  background: #1d4ed8;
+  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.6);
+}
+
+.pro-range::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #2563eb;
+  cursor: pointer;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
+}
+
+.pro-range:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
 }
 
 /* Stress Test Shield */
@@ -2798,7 +2884,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 .shock-scenarios-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr));
   gap: 14px;
   margin-top: 10px;
 }
@@ -2974,7 +3060,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 .fire-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   gap: 16px;
   margin-top: 10px;
 }
@@ -3091,6 +3177,94 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   background: #8b5cf6 !important;
 }
 
+/* Sarmaya Pro Spotlight Card */
+.pro-spotlight-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+  border: 1px solid #bfdbfe;
+  margin: 12px 0 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.06);
+}
+
+.pro-spotlight-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1 1 280px;
+}
+
+.pro-spotlight-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #2563eb;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.pro-spotlight-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.pro-spotlight-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pro-spotlight-title-row strong {
+  font-size: 14px;
+  color: #1e3a8a;
+}
+
+.pro-spotlight-tag {
+  font-size: 9px;
+  font-weight: 750;
+  background: #dbeafe;
+  color: #1d4ed8;
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+
+.pro-spotlight-desc {
+  font-size: 11px;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.pro-spotlight-btn {
+  font-size: 11px;
+  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .pro-spotlight-card {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .pro-spotlight-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 .fire-tier-footer {
   margin: 0;
   font-size: 10px;
@@ -3118,6 +3292,53 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 .text-muted {
   color: #94a3b8 !important;
+}
+
+@media (max-width: 640px) {
+  .sarmaya-pro-container {
+    gap: 12px;
+  }
+  .pro-card-body {
+    padding: 12px;
+    gap: 10px;
+  }
+  .pro-stock-spec-card {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .pro-payout-metrics {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .payout-big-number {
+    font-size: 18px;
+  }
+  .payout-monthly-number {
+    font-size: 15px;
+  }
+  .stress-test-header-card {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px;
+    gap: 12px;
+  }
+  .stress-score-gauge {
+    width: 72px;
+    height: 72px;
+  }
+  .gauge-number {
+    font-size: 22px;
+  }
+  .pro-chart-body {
+    height: 260px !important;
+  }
+  .pro-data-table {
+    min-width: 540px;
+  }
+  .fire-cards-grid,
+  .shock-scenarios-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 

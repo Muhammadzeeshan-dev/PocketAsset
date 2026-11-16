@@ -527,6 +527,18 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
                     onChange={(e) => setStartingWealth(Number(e.target.value))}
                     className="pro-range"
                   />
+                  <div className="slider-quick-presets">
+                    {[0, 10000, 50000, 100000, 250000, 500000].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setStartingWealth(preset)}
+                        className={`slider-preset-chip ${startingWealth === preset ? "active" : ""}`}
+                      >
+                        {preset === 0 ? "Rs. 0" : `Rs. ${preset / 1000}k`}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="slider-group">
@@ -543,6 +555,18 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
                     onChange={(e) => setMonthlySIP(Number(e.target.value))}
                     className="pro-range"
                   />
+                  <div className="slider-quick-presets">
+                    {[5000, 15000, 25000, 50000, 100000].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setMonthlySIP(preset)}
+                        className={`slider-preset-chip ${monthlySIP === preset ? "active" : ""}`}
+                      >
+                        Rs. {preset / 1000}k/mo
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="slider-group">
@@ -559,7 +583,18 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
                     onChange={(e) => setExpectedReturn(Number(e.target.value))}
                     className="pro-range"
                   />
-                  <small className="field-hint">KSE-100 20-year compound CAGR is ~14.8%.</small>
+                  <div className="slider-quick-presets">
+                    {[12, 14.8, 18, 22].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setExpectedReturn(preset)}
+                        className={`slider-preset-chip ${expectedReturn === preset ? "active" : ""}`}
+                      >
+                        {preset === 14.8 ? "14.8% (KSE-100 Avg)" : `${preset}%`}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="slider-group">
@@ -576,7 +611,18 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
                     onChange={(e) => setInflationRate(Number(e.target.value))}
                     className="pro-range"
                   />
-                  <small className="field-hint">Used to compute real purchasing power in today's rupees.</small>
+                  <div className="slider-quick-presets">
+                    {[7, 9.5, 12, 15].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setInflationRate(preset)}
+                        className={`slider-preset-chip ${inflationRate === preset ? "active" : ""}`}
+                      >
+                        {preset === 9.5 ? "9.5% (Avg)" : `${preset}%`}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="slider-group">
@@ -593,6 +639,18 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
                     onChange={(e) => setCurrentAge(Number(e.target.value))}
                     className="pro-range"
                   />
+                  <div className="slider-quick-presets">
+                    {[20, 25, 30, 35, 40].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setCurrentAge(preset)}
+                        className={`slider-preset-chip ${currentAge === preset ? "active" : ""}`}
+                      >
+                        Age {preset}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -606,7 +664,7 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
                 </div>
                 <span className="daily-count-pill">1,000 Iterations</span>
               </div>
-              <div className="pro-card-body" style={{ height: "350px", paddingBottom: "1rem" }}>
+              <div className="pro-card-body pro-chart-body" style={{ height: "350px", paddingBottom: "1rem" }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                     <defs>

@@ -106,19 +106,22 @@ export function FireCalculatorWidget({
             background: "rgba(255, 255, 255, 0.05)",
             border: "1px solid rgba(255, 255, 255, 0.1)",
             borderRadius: "12px",
-            padding: "8px 16px",
+            padding: "10px 16px",
             display: "flex",
-            alignItems: "center",
-            gap: "14px",
+            flexDirection: "column",
+            gap: "8px",
+            minWidth: "260px",
+            maxWidth: "100%",
+            flex: "1 1 auto",
           }}
         >
-          <div>
-            <div style={{ fontSize: "10px", color: "#94a3b8", textTransform: "uppercase", fontWeight: "700" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: "10px", color: "#94a3b8", textTransform: "uppercase", fontWeight: "700" }}>
               Simulate Monthly Savings
-            </div>
-            <div style={{ fontSize: "15px", fontWeight: "800", color: "#38bdf8" }}>
+            </span>
+            <span style={{ fontSize: "15px", fontWeight: "800", color: "#38bdf8" }}>
               Rs. {monthlySavingsRs.toLocaleString("en-PK")}/mo
-            </div>
+            </span>
           </div>
           <input
             type="range"
@@ -127,8 +130,30 @@ export function FireCalculatorWidget({
             step="1000"
             value={monthlySavingsRs}
             onChange={(e) => setMonthlySavingsRs(Number(e.target.value))}
-            style={{ width: "130px", accentColor: "#38bdf8", cursor: "pointer" }}
+            className="pro-range"
+            style={{ width: "100%", accentColor: "#38bdf8", cursor: "pointer", margin: "4px 0" }}
           />
+          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+            {[2000, 5000, 10000, 20000, 50000].map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => setMonthlySavingsRs(preset)}
+                style={{
+                  padding: "3px 8px",
+                  borderRadius: "6px",
+                  fontSize: "10px",
+                  fontWeight: 650,
+                  border: monthlySavingsRs === preset ? "1px solid #38bdf8" : "1px solid rgba(255, 255, 255, 0.15)",
+                  background: monthlySavingsRs === preset ? "rgba(56, 189, 248, 0.2)" : "rgba(255, 255, 255, 0.05)",
+                  color: monthlySavingsRs === preset ? "#38bdf8" : "#cbd5e1",
+                  cursor: "pointer",
+                }}
+              >
+                Rs. {preset >= 1000 ? `${preset / 1000}k` : preset}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

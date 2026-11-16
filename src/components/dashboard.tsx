@@ -636,39 +636,22 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
           </section>
 
           {/* Sarmaya Pro Financial Suite Spotlight Card */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "14px 18px",
-              borderRadius: "12px",
-              background: "linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)",
-              border: "1px solid #bfdbfe",
-              margin: "12px 0 16px",
-              flexWrap: "wrap",
-              gap: "12px",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "#2563eb", display: "grid", placeItems: "center", color: "#ffffff", flexShrink: 0 }}>
+          <div className="pro-spotlight-card">
+            <div className="pro-spotlight-left">
+              <div className="pro-spotlight-icon">
                 <Zap size={20} />
               </div>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <strong style={{ fontSize: "14px", color: "#1e3a8a" }}>Sarmaya &amp; Zerodha Pro Wealth Terminal</strong>
-                  <span style={{ fontSize: "9px", fontWeight: 750, background: "#dbeafe", color: "#1d4ed8", padding: "1px 6px", borderRadius: "8px" }}>FREE TIER</span>
+              <div className="pro-spotlight-copy">
+                <div className="pro-spotlight-title-row">
+                  <strong>Sarmaya &amp; Zerodha Pro Wealth Terminal</strong>
+                  <span className="pro-spotlight-tag">FREE TIER</span>
                 </div>
-                <span style={{ fontSize: "11px", color: "#475569" }}>
+                <span className="pro-spotlight-desc">
                   PSX Dividend Aristocrats Forecaster (FBR 15% vs 30% WHT), 30-Year Stochastic Monte Carlo (Crorepati Roadmap), &amp; Black-Swan Stress Shield.
                 </span>
               </div>
             </div>
-            <Link
-              href="/sarmaya-pro"
-              className="primary-button"
-              style={{ fontSize: "11px", padding: "6px 14px", gap: "6px" }}
-            >
+            <Link href="/sarmaya-pro" className="primary-button pro-spotlight-btn">
               Launch Pro Terminal <ArrowRight size={14} />
             </Link>
           </div>

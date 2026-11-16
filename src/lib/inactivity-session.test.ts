@@ -7,6 +7,7 @@ import {
   touchSessionActivity,
 } from "./security-store";
 import { isAuthorizedAdminEmail } from "./auth-security";
+import { getInactivityConfig, WARNING_COUNTDOWN_SEC } from "./use-inactivity-timer";
 import fs from "fs";
 import path from "path";
 
@@ -172,6 +173,13 @@ describe("PocketAsset Session Inactivity & Persistence Management", () => {
     // Scenario C: User inactive for > 32 minutes (expired)
     const expiredElapsed = (32 * 60 + 1) * 1000;
     expect(expiredElapsed >= TOTAL_EXPIRY_MS).toBe(true);
+  });
+
+  it("verifies 60-second warning countdown and custom auto-logout config", () => {
+    expect(WARNING_COUNTDOWN_SEC).toBe(60);
+    const config = getInactivityConfig();
+    expect(config.countdownSec).toBe(60);
+    expect(config.totalMs).toBe(config.timeoutMs + 60 * 1000);
   });
 
   it("ensures .env.local is ignored in .gitignore", () => {

@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   Calendar,
   CheckCircle2,
+  Clock,
   Database,
   Download,
   FileText,
@@ -66,6 +67,33 @@ export function SettingsPage({
 
   const [restoreMessage, setRestoreMessage] = useState("");
   const [restoreError, setRestoreError] = useState("");
+
+  // Inactivity auto-logout timer setting state (default 300s = 5m, or custom e.g. 60s)
+  const [inactivityTimeoutSec, setInactivityTimeoutSec] = useState<number>(() => {
+    if (typeof window === "undefined" || !window.localStorage) return 300;
+    const val = window.localStorage.getItem("pocketasset_inactivity_timeout_sec");
+    return val !== null ? Number(val) : 300;
+  });
+
+  function handleSaveInactivityTimeout(sec: number) {
+    setInactivityTimeoutSec(sec);
+    if (typeof window !== "undefined" && window.localStorage) {
+      window.localStorage.setItem("pocketasset_inactivity_timeout_sec", String(sec));
+      if (sec === 0) {
+        window.localStorage.setItem("pocketasset_remember_me", "true");
+      } else {
+        window.localStorage.removeItem("pocketasset_remember_me");
+      }
+      onToast(sec === 0 ? "Inactivity auto-logout disabled." : `Auto-logout set to ${sec < 60 ? `${sec}s` : sec === 60 ? "60 seconds" : `${Math.round(sec / 60)} minutes`}.`);
+    }
+  }
+
+  function handleTriggerTestWarning() {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("pocketasset_test_inactivity_warning"));
+      onToast("60-second auto-logout warning banner triggered. Look at the top of your screen!");
+    }
+  }
 
   function handleExportBackup() {
     try {
@@ -153,6 +181,97 @@ export function SettingsPage({
           <div>
             <label style={{ fontSize: "0.8rem", color: "#64748b", display: "block" }}>Storage & Security</label>
             <strong style={{ fontSize: "0.95rem", color: "#16a34a" }}>Row-Level Security Active</strong>
+          </div>
+        </div>
+      </section>
+
+      {/* Inactivity Security & Auto-Logout */}
+      <section className="dashboard-card" style={{ marginBottom: "1.5rem" }}>
+        <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "10px" }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <Clock size={18} color="#2563eb" />
+              <h3 style={{ margin: 0 }}>Inactivity Auto-Logout &amp; Session Protection</h3>
+            </div>
+            <p className="card-caption">
+              Protect your financial ledger by automatically signing out when idle. Includes an authoritative 60-second warning countdown before signing out.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="outline-button"
+            style={{ fontSize: "11px", padding: "5px 12px", display: "inline-flex", alignItems: "center", gap: "6px", background: "#f0fdf4", color: "#16a34a", borderColor: "#bbf7d0" }}
+            onClick={handleTriggerTestWarning}
+            title="Immediately launch the 60-second warning banner to test countdown and buttons"
+          >
+            <Clock size={13} /> Test 60-Second Auto-Logout Now
+          </button>
+        </div>
+
+        <div style={{ marginTop: "1rem" }}>
+          <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "0.5rem", color: "#334155" }}>
+            Choose Inactivity Idle Duration
+          </label>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            {[
+              { sec: 60, label: "60 Seconds (High Security)", hint: "Fastest security lock" },
+              { sec: 120, label: "2 Minutes", hint: "Short idle lock" },
+              { sec: 300, label: "5 Minutes (Recommended)", hint: "Standard balanced protection" },
+              { sec: 900, label: "15 Minutes", hint: "Extended workspace" },
+              { sec: 1800, label: "30 Minutes", hint: "Long session" },
+              { sec: 0, label: "Disabled", hint: "Stay logged in (Personal device only)" },
+            ].map(({ sec, label, hint }) => {
+              const active = inactivityTimeoutSec === sec;
+              return (
+                <button
+                  key={sec}
+                  type="button"
+                  onClick={() => handleSaveInactivityTimeout(sec)}
+                  style={{
+                    padding: "8px 14px",
+                    borderRadius: "8px",
+                    fontSize: "0.82rem",
+                    fontWeight: 650,
+                    border: active ? "2px solid #2563eb" : "1px solid #cbd5e1",
+                    backgroundColor: active ? "#eff6ff" : "#ffffff",
+                    color: active ? "#1d4ed8" : "#475569",
+                    cursor: "pointer",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "flex-start",
+                    gap: "2px",
+                    minWidth: "140px",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <span style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                    {label} {active ? "✓" : ""}
+                  </span>
+                  <small style={{ fontSize: "10px", color: active ? "#2563eb" : "#94a3b8", fontWeight: 400 }}>
+                    {hint}
+                  </small>
+                </button>
+              );
+            })}
+          </div>
+
+          <div style={{ marginTop: "12px", padding: "10px 14px", borderRadius: "8px", background: "#f8fafc", border: "1px solid #e2e8f0", fontSize: "11px", color: "#64748b", display: "flex", alignItems: "center", gap: "8px" }}>
+            <Shield size={14} color="#3b82f6" style={{ flexShrink: 0 }} />
+            <span>
+              {inactivityTimeoutSec === 60 ? (
+                <strong style={{ color: "#2563eb" }}>
+                  Strict 60-Second Auto-Logout Active: After 60 seconds of no mouse, keyboard, or touch events, a 60-second warning banner will appear.
+                </strong>
+              ) : inactivityTimeoutSec === 0 ? (
+                <span style={{ color: "#d97706" }}>
+                  Auto-logout is disabled for this personal browser session. Remember to manually sign out on shared devices.
+                </span>
+              ) : (
+                <span>
+                  After <strong>{Math.round(inactivityTimeoutSec / 60)} minutes</strong> of inactivity, the 60-second warning banner will appear with an audible alert. Click &quot;Keep Working&quot; or press Enter to stay signed in.
+                </span>
+              )}
+            </span>
           </div>
         </div>
       </section>
