@@ -179,35 +179,35 @@ describe("PocketAsset Session Inactivity & Persistence Management", () => {
     expect(WARNING_COUNTDOWN_SEC).toBe(60);
     const config = getInactivityConfig();
     expect(config.countdownSec).toBe(60);
-    expect(config.timeoutMs).toBe(60 * 1000); // 60s idle default
-    expect(config.totalMs).toBe(120 * 1000); // 60s idle + 60s countdown = 120s
+    expect(config.timeoutMs).toBe(3 * 1000); // 3s idle default
+    expect(config.totalMs).toBe(63 * 1000); // 3s idle + 60s countdown = 63s
   });
 
-  it("calculates 60-second idle default and 60-second warning countdown boundaries accurately", () => {
-    const INACTIVITY_TIMEOUT_MS = 60 * 1000; // 60,000 ms = 60 seconds
+  it("calculates 3-second idle default and 60-second warning countdown boundaries accurately", () => {
+    const INACTIVITY_TIMEOUT_MS = 3 * 1000; // 3,000 ms = 3 seconds
     const COUNTDOWN_SEC = 60; // 60 seconds
-    const TOTAL_EXPIRY_MS = INACTIVITY_TIMEOUT_MS + COUNTDOWN_SEC * 1000; // 120,000 ms (2 minutes)
+    const TOTAL_EXPIRY_MS = INACTIVITY_TIMEOUT_MS + COUNTDOWN_SEC * 1000; // 63,000 ms (63 seconds)
 
-    expect(INACTIVITY_TIMEOUT_MS).toBe(60000);
-    expect(TOTAL_EXPIRY_MS).toBe(120000);
+    expect(INACTIVITY_TIMEOUT_MS).toBe(3000);
+    expect(TOTAL_EXPIRY_MS).toBe(63000);
 
-    // Scenario A: User active 30s ago -> No warning yet
-    const activeElapsed = 30 * 1000;
+    // Scenario A: User active 1s ago -> No warning yet
+    const activeElapsed = 1 * 1000;
     expect(activeElapsed < INACTIVITY_TIMEOUT_MS).toBe(true);
 
-    // Scenario B: User inactive for exactly 60s -> 60s warning modal triggered
-    const warningElapsed = 60 * 1000;
+    // Scenario B: User inactive for 3s -> 60s top countdown banner triggered
+    const warningElapsed = 3 * 1000;
     expect(warningElapsed >= INACTIVITY_TIMEOUT_MS).toBe(true);
     const remainingAtTrigger = Math.ceil((TOTAL_EXPIRY_MS - warningElapsed) / 1000);
     expect(remainingAtTrigger).toBe(60);
 
-    // Scenario C: User inactive for 90s (30s into countdown) -> 30s remaining
-    const midElapsed = 90 * 1000;
+    // Scenario C: User inactive for 33s (30s into countdown) -> 30s remaining
+    const midElapsed = 33 * 1000;
     const remainingMid = Math.ceil((TOTAL_EXPIRY_MS - midElapsed) / 1000);
     expect(remainingMid).toBe(30);
 
-    // Scenario D: User inactive for 120s -> Countdown hits 0, auto-logout executed
-    const expiredElapsed = 120 * 1000;
+    // Scenario D: User inactive for 63s -> Countdown hits 0, auto-logout executed
+    const expiredElapsed = 63 * 1000;
     expect(expiredElapsed >= TOTAL_EXPIRY_MS).toBe(true);
   });
 

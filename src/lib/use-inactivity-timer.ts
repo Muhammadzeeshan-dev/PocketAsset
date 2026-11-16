@@ -2,11 +2,11 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 
-const DEFAULT_INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes idle before warning banner
+const DEFAULT_INACTIVITY_TIMEOUT_MS = 3 * 1000; // 3 seconds idle before top countdown banner appears
 const REMEMBERED_INACTIVITY_TIMEOUT_MS = 24 * 60 * 60 * 1000; // 24 hours idle for remembered devices
 export const WARNING_COUNTDOWN_SEC = 60; // 60 seconds (1 minute) countdown
 export const STORAGE_KEY_CUSTOM_TIMEOUT = "pocketasset_inactivity_timeout_sec";
-const TOTAL_EXPIRY_MS = DEFAULT_INACTIVITY_TIMEOUT_MS + WARNING_COUNTDOWN_SEC * 1000; // 6 minutes total
+const TOTAL_EXPIRY_MS = DEFAULT_INACTIVITY_TIMEOUT_MS + WARNING_COUNTDOWN_SEC * 1000; // 63 seconds total
 
 export function getInactivityConfig() {
   const isRemembered =
@@ -26,8 +26,6 @@ export function getInactivityConfig() {
           timeoutMs = parsedSec * 1000;
         }
       }
-    } else if (isRemembered) {
-      timeoutMs = REMEMBERED_INACTIVITY_TIMEOUT_MS;
     }
   }
 
@@ -271,17 +269,23 @@ export function useInactivityTimer({
     // and IPC (BroadcastChannel) writes to at most once per 5 seconds on deliberate user actions (click, keydown, touchstart).
     // High-frequency continuous events (mousemove, scroll) only update the in-memory timestamp to eliminate frame drops and main-thread lag!
     const handleUserInteraction = (evt?: Event) => {
-      // If banner is already open, purposeful interactions (click, keydown) automatically extend session
+      // If banner is already open:
       if (warningOpenRef.current) {
-        if (evt && (evt.type === "click" || evt.type === "keydown")) {
+        // If clicking inside the session banner, let its button handler execute
+        const target = evt?.target as HTMLElement | null;
+        if (target?.closest?.(".session-top-banner")) {
+          return;
+        }
+        // Purposeful user interaction on the page (typing or clicking) extends session
+        if (evt && (evt.type === "click" || evt.type === "keydown" || evt.type === "touchstart")) {
           void extendSession();
         }
         return;
       }
 
       const currentTime = Date.now();
-      // Fast in-memory update (throttled to at most once per 1,000ms)
-      if (currentTime - lastThrottleRef.current < 1000) {
+      // Fast in-memory update (throttled to at most once per 500ms)
+      if (currentTime - lastThrottleRef.current < 500) {
         return;
       }
       lastThrottleRef.current = currentTime;
