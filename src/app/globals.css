@@ -4726,3 +4726,1014 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     padding: 6px 8px;
   }
 }
+
+
+/* ==========================================================================
+   SARMAYA PRO COMPREHENSIVE COMPONENT STYLES (100% COMPLETE COVERAGE)
+   ========================================================================== */
+
+/* 1. GENERAL 2-COL AND GRID SYSTEM */
+.pro-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .pro-grid-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pro-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pro-input-group label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.field-hint {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+  display: block;
+}
+
+/* 2. TAB 1: PSX DIVIDEND ARISTOCRAT CHIPS */
+.stock-chips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+  max-height: 290px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.stock-select-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.stock-select-chip:hover {
+  border-color: #93c5fd;
+  background: #f8fafc;
+}
+
+.stock-select-chip.stock-chip-active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 0 0 1px #2563eb;
+}
+
+.stock-chip-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stock-ticker {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: -0.2px;
+}
+
+.stock-yield-badge {
+  font-size: 9px;
+  font-weight: 750;
+  color: #059669;
+  background: #ecfdf5;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.stock-chip-bottom {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.stock-company-name {
+  font-size: 10px;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 72px;
+}
+
+/* 3. TAB 2: PSX ALPHA SCREENER CONTROLS & STOCK CARDS */
+.screener-filter-panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.screener-search-icon {
+  flex-shrink: 0;
+  color: #64748b;
+}
+
+.screener-clear-btn {
+  border: 0;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.screener-clear-btn:hover {
+  background: #cbd5e1;
+  color: #0f172a;
+}
+
+.shariah-toggle-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.shariah-toggle-pill:hover {
+  border-color: #059669;
+  color: #059669;
+}
+
+.shariah-toggle-pill.active {
+  border-color: #059669;
+  background: #ecfdf5;
+  color: #059669;
+  box-shadow: 0 0 0 1px #059669;
+}
+
+.screener-sector-chips-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.screener-filter-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.screener-sector-chip {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.screener-sector-chip:hover {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #bfdbfe;
+}
+
+.screener-sector-chip.active {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+  font-weight: 700;
+}
+
+.screener-sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.screener-sort-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.sort-pill {
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.sort-pill:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.sort-pill.active {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #2563eb;
+  font-weight: 700;
+}
+
+.stock-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.stock-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stock-ticker-badge {
+  display: grid;
+  place-items: center;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #1e293b;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 850;
+  letter-spacing: -0.3px;
+}
+
+.stock-full-name {
+  display: block;
+  font-size: 13px;
+  font-weight: 750;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.stock-sector-tag {
+  display: inline-block;
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.shariah-certified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #059669;
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.alpha-rating-badge.grade-aplus {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.alpha-rating-badge.grade-a {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+.alpha-rating-badge.grade-bplus {
+  background: #fef3c7;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+
+.alpha-rating-badge.grade-b {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.stock-card-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.price-subtext {
+  font-size: 10px;
+  color: #64748b;
+  display: block;
+}
+
+.stock-main-price {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.stock-yield-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.stock-yield-pill span {
+  font-size: 10px;
+  color: #64748b;
+}
+
+.stock-yield-pill strong {
+  font-size: 14px;
+  font-weight: 750;
+  color: #059669;
+}
+
+.stock-stats-matrix {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.stat-matrix-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  background: #f8fafc;
+  border-radius: 6px;
+  text-align: center;
+  border: 1px solid #f1f5f9;
+}
+
+.stat-matrix-cell span {
+  font-size: 9px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.stat-matrix-cell strong {
+  font-size: 11px;
+  font-weight: 750;
+  color: #1e293b;
+}
+
+.graham-val-left {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 11px;
+  color: #475569;
+}
+
+.graham-val-left strong {
+  color: #0f172a;
+}
+
+.graham-discount-pill {
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.screener-card-desc {
+  margin: 0;
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.screener-select-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-top: auto;
+}
+
+.screener-select-btn:hover {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+/* 4. TAB 3: KSE-100 REGIME HERO & RADAR */
+.regime-hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.regime-status-beacon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.beacon-radar-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 10px #10b981;
+  animation: pulseDot 1.4s infinite ease-in-out;
+}
+
+.regime-status-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #34d399;
+}
+
+.regime-score-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.regime-score-badge strong {
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.regime-hero-summary {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #cbd5e1;
+  max-width: 900px;
+}
+
+.thermometer-track-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.thermometer-track-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.thermometer-pointer {
+  position: absolute;
+  top: -5px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pointer-tag {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  white-space: nowrap;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: #0f172a;
+  border: 1px solid #3b82f6;
+  color: #38bdf8;
+  font-size: 10px;
+  font-weight: 750;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.thermometer-pointer::after {
+  content: "";
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 3px solid #2563eb;
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.8);
+  display: block;
+}
+
+.macro-metric-card {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.macro-pillar-kicker {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.macro-metric-card h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 750;
+  color: #1e293b;
+}
+
+.macro-big-num {
+  font-size: 26px;
+  font-weight: 850;
+  letter-spacing: -0.8px;
+  margin: 4px 0;
+}
+
+.macro-comparison-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  color: #64748b;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 8px;
+}
+
+.allocation-bar-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 750;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 6px;
+  transition: width 0.3s ease;
+}
+
+.segment-equity { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+.segment-sukuk  { background: linear-gradient(135deg, #059669, #047857); }
+.segment-gold   { background: linear-gradient(135deg, #d97706, #b45309); }
+.segment-cash   { background: linear-gradient(135deg, #64748b, #475569); }
+
+.allocation-legend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.allocation-legend-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.legend-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.swatch-equity { background: #2563eb; }
+.swatch-sukuk  { background: #059669; }
+.swatch-gold   { background: #d97706; }
+.swatch-cash   { background: #64748b; }
+
+.allocation-legend-item strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 750;
+  color: #0f172a;
+}
+
+.allocation-legend-item p {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+/* 5. TAB 4: QUANTUM WEALTH GOALS */
+.goal-icon {
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.goal-years-tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.goal-card-amount {
+  font-size: 11px;
+  font-weight: 700;
+  color: #059669;
+}
+
+.goal-card-desc {
+  margin: 0;
+  font-size: 10px;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.quantum-plan-result-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.sip-caption {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1e40af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.quantum-stat-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.quantum-stat-cell span {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.quantum-stat-cell strong {
+  font-size: 13px;
+  font-weight: 750;
+  color: #0f172a;
+}
+
+.probability-meter-box {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.probability-label-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+.probability-track {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.probability-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #059669);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+/* 6. TAB 5: MONTE CARLO & ICONS */
+.pro-grid-monte-carlo {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 16px;
+  margin-top: 14px;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .pro-grid-monte-carlo {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pro-reset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pro-reset-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.pro-sliders-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.icon-zap { color: #0284c7; }
+.icon-emerald { color: #059669; }
+
+/* 7. TAB 6: STRESS SHIELD */
+.stress-resilience-badge {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 250px;
+}
+
+.stress-icon {
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.stress-resilience-badge .caption {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+}
+
+.resilience-score {
+  font-size: 20px;
+  font-weight: 850;
+  color: #0f172a;
+  display: block;
+  line-height: 1.2;
+  margin: 2px 0;
+}
+
+.stress-resilience-badge small {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.stress-score-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.score-caption {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.score-digit {
+  font-size: 26px;
+  font-weight: 850;
+  line-height: 1.1;
+  margin: 2px 0;
+}
+
+.stress-score-box small {
+  font-size: 10px;
+  color: #64748b;
+}
+
+.stress-scenarios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.scenario-card {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.scenario-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.scenario-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 750;
+  color: #0f172a;
+}
+
+.scenario-desc {
+  margin: 0;
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.scenario-runway-box {
+  padding: 8px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.runway-label {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.runway-val {
+  font-size: 13px;
+  font-weight: 750;
+  color: #0f172a;
+}
+
+.scenario-recs {
+  margin-top: 2px;
+}
+
+.recs-heading {
+  font-size: 10px;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.scenario-recs ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.scenario-recs li {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 11px;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.scenario-recs li svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: #2563eb;
+}
+
+
+/* ==========================================================================
+   SARMAYA PRO RESPONSIVE & MOBILE REFINEMENTS
+   ========================================================================== */
+@media (max-width: 640px) {
+  .stock-chips-grid {
+    grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+    max-height: 220px;
+  }
+  .screener-sector-chips-wrap {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .screener-sort-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .stock-stats-matrix {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .quantum-goal-presets-grid {
+    grid-template-columns: 1fr;
+  }
+  .allocation-bar-segment span {
+    font-size: 9px;
+  }
+  .allocation-legend-grid {
+    grid-template-columns: 1fr;
+  }
+  .stress-test-header-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .stress-score-box {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .monte-carlo-milestone-banner {
+    grid-template-columns: 1fr;
+  }
+  .pro-card-body {
+    padding: 12px;
+  }
+  .pro-table-wrap {
+    padding: 0 8px 8px;
+  }
+  .pro-data-table th,
+  .pro-data-table td {
+    padding: 8px 8px;
+    font-size: 11px;
+  }
+}
