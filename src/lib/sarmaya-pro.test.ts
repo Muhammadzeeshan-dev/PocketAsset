@@ -6,6 +6,10 @@ import {
   runMonteCarloSimulation,
   calculateMacroStressTest,
   calculateFireMatrix,
+  filterAndSortPsxStocks,
+  calculateKse100ValuationThermometer,
+  calculateQuantumGoalPlan,
+  PRESET_QUANTUM_GOALS,
 } from "./sarmaya-pro";
 
 describe("Sarmaya Pro Financial Suite calculations", () => {
@@ -110,5 +114,54 @@ describe("Sarmaya Pro Financial Suite calculations", () => {
     expect(fire.standardFire.corpusRupees).toBe(18_000_000);
     // Fat FIRE: 40x annual luxury
     expect(fire.fatFire.corpusRupees).toBeGreaterThan(fire.standardFire.corpusRupees);
+  });
+
+  it("filters and sorts PSX alpha screener stocks accurately", () => {
+    // 1. Sector filter
+    const fertilizerStocks = filterAndSortPsxStocks(PSX_DIVIDEND_ARISTOCRATS, { sector: "Fertilizer" });
+    expect(fertilizerStocks.length).toBeGreaterThanOrEqual(2);
+    fertilizerStocks.forEach((s) => expect(s.sector).toBe("Fertilizer"));
+
+    // 2. Shariah compliance filter
+    const shariahOnly = filterAndSortPsxStocks(PSX_DIVIDEND_ARISTOCRATS, { shariahOnly: true });
+    expect(shariahOnly.length).toBeGreaterThanOrEqual(5);
+    shariahOnly.forEach((s) => expect(s.isShariahCompliant).toBe(true));
+
+    // 3. Sort by yield descending
+    const byYield = filterAndSortPsxStocks(PSX_DIVIDEND_ARISTOCRATS, { sortBy: "yield" });
+    for (let i = 0; i < byYield.length - 1; i++) {
+      expect(byYield[i].dividendYieldPercent).toBeGreaterThanOrEqual(byYield[i + 1].dividendYieldPercent);
+    }
+
+    // 4. Search query
+    const meezanSearch = filterAndSortPsxStocks(PSX_DIVIDEND_ARISTOCRATS, { searchQuery: "meezan" });
+    expect(meezanSearch.some((s) => s.ticker === "MEBL")).toBe(true);
+  });
+
+  it("evaluates KSE-100 valuation thermometer and regime analysis", () => {
+    const thermometer = calculateKse100ValuationThermometer();
+    expect(thermometer.currentKseIndex).toBeGreaterThan(90000);
+    expect(thermometer.forwardPeRatio).toBeLessThan(6);
+    expect(thermometer.peDiscountPercent).toBeGreaterThan(30);
+    expect(thermometer.marketRegime).toBe("DEEP_VALUE");
+    expect(thermometer.thermometerScore).toBeGreaterThanOrEqual(80);
+    expect(
+      thermometer.tacticalAllocation.equitiesPercent +
+      thermometer.tacticalAllocation.sovereignSukukOrGovtPercent +
+      thermometer.tacticalAllocation.goldBullionPercent +
+      thermometer.tacticalAllocation.liquidCashPercent
+    ).toBe(100);
+  });
+
+  it("calculates quantum wealth milestone goals with inflation adjustments", () => {
+    expect(PRESET_QUANTUM_GOALS.length).toBeGreaterThanOrEqual(5);
+
+    // Goal: 1 Crore in 8 years starting with 0 capital at 15% return and 9% inflation
+    const goal = calculateQuantumGoalPlan(10_000_000, 8, 0, 15, 9);
+    expect(goal.nominalTargetRupees).toBe(10_000_000);
+    expect(goal.inflationAdjustedTargetRupees).toBeGreaterThan(goal.nominalTargetRupees);
+    expect(goal.requiredMonthlySipRupees).toBeGreaterThan(0);
+    expect(goal.wealthCreatedByCompoundingRupees).toBeGreaterThan(0);
+    expect(goal.compoundingMultiplier).toBeGreaterThan(1);
   });
 });

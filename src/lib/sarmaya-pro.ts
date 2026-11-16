@@ -14,6 +14,15 @@ export interface PsxDividendStock {
   payoutFrequency: "Quarterly" | "Bi-Annual" | "Annual";
   typicalExMonths: string[];
   description: string;
+  peRatio?: number;
+  pbRatio?: number;
+  roePercent?: number;
+  beta?: number;
+  grahamFairValueRupees?: number;
+  valuationDiscountPercent?: number;
+  isShariahCompliant?: boolean;
+  alphaScore?: number;
+  alphaRating?: "A+" | "A" | "B+" | "B";
 }
 
 export const PSX_DIVIDEND_ARISTOCRATS: PsxDividendStock[] = [
@@ -27,6 +36,15 @@ export const PSX_DIVIDEND_ARISTOCRATS: PsxDividendStock[] = [
     payoutFrequency: "Quarterly",
     typicalExMonths: ["Apr", "Jul", "Oct", "Jan"],
     description: "Pakistan's premier fertilizer giant with consistent quarterly dividend track record since 1978.",
+    peRatio: 5.8,
+    pbRatio: 2.4,
+    roePercent: 42.0,
+    beta: 0.72,
+    grahamFairValueRupees: 340.0,
+    valuationDiscountPercent: 19.1,
+    isShariahCompliant: true,
+    alphaScore: 94,
+    alphaRating: "A+",
   },
   {
     ticker: "HUBC",
@@ -38,6 +56,15 @@ export const PSX_DIVIDEND_ARISTOCRATS: PsxDividendStock[] = [
     payoutFrequency: "Quarterly",
     typicalExMonths: ["Feb", "Apr", "Sep", "Nov"],
     description: "Largest independent power producer (IPP) with steady dollar-indexed and rupee cash flows.",
+    peRatio: 3.9,
+    pbRatio: 1.1,
+    roePercent: 28.5,
+    beta: 0.85,
+    grahamFairValueRupees: 185.0,
+    valuationDiscountPercent: 36.8,
+    isShariahCompliant: true,
+    alphaScore: 91,
+    alphaRating: "A+",
   },
   {
     ticker: "ENGRO",
@@ -49,6 +76,15 @@ export const PSX_DIVIDEND_ARISTOCRATS: PsxDividendStock[] = [
     payoutFrequency: "Quarterly",
     typicalExMonths: ["Apr", "Aug", "Nov", "Dec"],
     description: "Diversified blue-chip holding company across energy, petrochemicals, telecommunications, and agriculture.",
+    peRatio: 5.2,
+    pbRatio: 1.3,
+    roePercent: 25.0,
+    beta: 0.89,
+    grahamFairValueRupees: 420.0,
+    valuationDiscountPercent: 23.5,
+    isShariahCompliant: true,
+    alphaScore: 89,
+    alphaRating: "A",
   },
   {
     ticker: "OGDC",
@@ -60,6 +96,15 @@ export const PSX_DIVIDEND_ARISTOCRATS: PsxDividendStock[] = [
     payoutFrequency: "Quarterly",
     typicalExMonths: ["Mar", "May", "Oct", "Dec"],
     description: "State-owned E&P flagship with immense dollar-denominated hydrocarbon reserves.",
+    peRatio: 3.6,
+    pbRatio: 0.7,
+    roePercent: 20.4,
+    beta: 0.95,
+    grahamFairValueRupees: 210.0,
+    valuationDiscountPercent: 47.1,
+    isShariahCompliant: true,
+    alphaScore: 88,
+    alphaRating: "A",
   },
   {
     ticker: "MCB",
@@ -71,6 +116,15 @@ export const PSX_DIVIDEND_ARISTOCRATS: PsxDividendStock[] = [
     payoutFrequency: "Quarterly",
     typicalExMonths: ["Apr", "Aug", "Oct", "Feb"],
     description: "Highest CAR and lowest NPL ratio in the Pakistani banking sector with generous quarterly payouts.",
+    peRatio: 3.8,
+    pbRatio: 1.2,
+    roePercent: 31.5,
+    beta: 0.78,
+    grahamFairValueRupees: 310.0,
+    valuationDiscountPercent: 35.7,
+    isShariahCompliant: false,
+    alphaScore: 92,
+    alphaRating: "A+",
   },
   {
     ticker: "EFERT",
@@ -82,6 +136,15 @@ export const PSX_DIVIDEND_ARISTOCRATS: PsxDividendStock[] = [
     payoutFrequency: "Quarterly",
     typicalExMonths: ["Apr", "Aug", "Oct", "Dec"],
     description: "High-margin urea & DAP producer with nearly 100% earnings distribution policy.",
+    peRatio: 5.4,
+    pbRatio: 2.1,
+    roePercent: 39.2,
+    beta: 0.74,
+    grahamFairValueRupees: 220.0,
+    valuationDiscountPercent: 23.2,
+    isShariahCompliant: true,
+    alphaScore: 93,
+    alphaRating: "A+",
   },
   {
     ticker: "POL",
@@ -93,6 +156,15 @@ export const PSX_DIVIDEND_ARISTOCRATS: PsxDividendStock[] = [
     payoutFrequency: "Bi-Annual",
     typicalExMonths: ["Jan", "Sep"],
     description: "Cash-rich explorer in the Potwar basin, debt-free balance sheet with massive payouts.",
+    peRatio: 4.6,
+    pbRatio: 1.6,
+    roePercent: 35.0,
+    beta: 0.82,
+    grahamFairValueRupees: 620.0,
+    valuationDiscountPercent: 27.8,
+    isShariahCompliant: true,
+    alphaScore: 90,
+    alphaRating: "A",
   },
   {
     ticker: "MEBL",
@@ -104,6 +176,95 @@ export const PSX_DIVIDEND_ARISTOCRATS: PsxDividendStock[] = [
     payoutFrequency: "Quarterly",
     typicalExMonths: ["Mar", "Aug", "Oct", "Feb"],
     description: "Pakistan's leading Islamic bank with extraordinary CASA deposit base and rapid compounding.",
+    peRatio: 4.4,
+    pbRatio: 1.5,
+    roePercent: 38.6,
+    beta: 0.81,
+    grahamFairValueRupees: 320.0,
+    valuationDiscountPercent: 30.6,
+    isShariahCompliant: true,
+    alphaScore: 95,
+    alphaRating: "A+",
+  },
+  {
+    ticker: "SYS",
+    name: "Systems Limited",
+    sector: "Technology Exports",
+    priceRupees: 418.0,
+    dividendYieldPercent: 6.2,
+    annualDpsRupees: 26.0,
+    payoutFrequency: "Annual",
+    typicalExMonths: ["May"],
+    description: "Global IT exporter earning dollar revenue with high recurring enterprise software contracts.",
+    peRatio: 14.8,
+    pbRatio: 3.8,
+    roePercent: 32.4,
+    beta: 1.15,
+    grahamFairValueRupees: 510.0,
+    valuationDiscountPercent: 18.6,
+    isShariahCompliant: true,
+    alphaScore: 87,
+    alphaRating: "A",
+  },
+  {
+    ticker: "LUCK",
+    name: "Lucky Cement",
+    sector: "Cement & Industry",
+    priceRupees: 785.0,
+    dividendYieldPercent: 8.5,
+    annualDpsRupees: 66.7,
+    payoutFrequency: "Annual",
+    typicalExMonths: ["Oct"],
+    description: "Conglomerate powerhouse in cement, automobiles, chemicals, and overseas power generation.",
+    peRatio: 6.9,
+    pbRatio: 1.2,
+    roePercent: 18.5,
+    beta: 1.05,
+    grahamFairValueRupees: 960.0,
+    valuationDiscountPercent: 22.3,
+    isShariahCompliant: true,
+    alphaScore: 86,
+    alphaRating: "A",
+  },
+  {
+    ticker: "UBL",
+    name: "United Bank Limited",
+    sector: "Commercial Banking",
+    priceRupees: 242.0,
+    dividendYieldPercent: 19.4,
+    annualDpsRupees: 47.0,
+    payoutFrequency: "Quarterly",
+    typicalExMonths: ["Apr", "Aug", "Oct", "Feb"],
+    description: "Generous dividend payer in the commercial banking space with high net interest margins.",
+    peRatio: 3.5,
+    pbRatio: 1.1,
+    roePercent: 32.0,
+    beta: 0.88,
+    grahamFairValueRupees: 345.0,
+    valuationDiscountPercent: 42.0,
+    isShariahCompliant: false,
+    alphaScore: 93,
+    alphaRating: "A+",
+  },
+  {
+    ticker: "MARI",
+    name: "Mari Energies Limited",
+    sector: "Oil & Gas Exploration",
+    priceRupees: 2250.0,
+    dividendYieldPercent: 12.4,
+    annualDpsRupees: 279.0,
+    payoutFrequency: "Bi-Annual",
+    typicalExMonths: ["Sep", "Jan"],
+    description: "Dominant gas producer in the Mari Field, zero net debt, and extraordinary reserve replacement ratio.",
+    peRatio: 5.1,
+    pbRatio: 1.8,
+    roePercent: 36.2,
+    beta: 0.79,
+    grahamFairValueRupees: 2850.0,
+    valuationDiscountPercent: 26.7,
+    isShariahCompliant: true,
+    alphaScore: 91,
+    alphaRating: "A+",
   },
 ];
 
@@ -525,5 +686,251 @@ export function calculateFireMatrix(
     leanFire: lean,
     standardFire: standard,
     fatFire: fat,
+  };
+}
+
+// ============================================================================
+// Module 5: PSX Alpha & Sector Screener Engine
+// ============================================================================
+export interface PsxStockFilterOptions {
+  sector?: string;
+  shariahOnly?: boolean;
+  minYield?: number;
+  maxPe?: number;
+  sortBy?: "alpha" | "yield" | "pe" | "roe" | "discount";
+  searchQuery?: string;
+}
+
+export function filterAndSortPsxStocks(
+  stocks: PsxDividendStock[],
+  options: PsxStockFilterOptions = {}
+): PsxDividendStock[] {
+  const {
+    sector = "All",
+    shariahOnly = false,
+    minYield = 0,
+    maxPe = 100,
+    sortBy = "alpha",
+    searchQuery = "",
+  } = options;
+
+  const query = searchQuery.trim().toLowerCase();
+
+  return stocks
+    .filter((s) => {
+      if (sector !== "All" && s.sector !== sector) return false;
+      if (shariahOnly && !s.isShariahCompliant) return false;
+      if (s.dividendYieldPercent < minYield) return false;
+      if ((s.peRatio ?? 0) > maxPe) return false;
+      if (query && !s.ticker.toLowerCase().includes(query) && !s.name.toLowerCase().includes(query) && !s.sector.toLowerCase().includes(query)) {
+        return false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === "yield") return b.dividendYieldPercent - a.dividendYieldPercent;
+      if (sortBy === "pe") return (a.peRatio ?? 0) - (b.peRatio ?? 0);
+      if (sortBy === "roe") return (b.roePercent ?? 0) - (a.roePercent ?? 0);
+      if (sortBy === "discount") return (b.valuationDiscountPercent ?? 0) - (a.valuationDiscountPercent ?? 0);
+      return (b.alphaScore ?? 0) - (a.alphaScore ?? 0);
+    });
+}
+
+// ============================================================================
+// Module 6: KSE-100 Valuation & Macro Thermometer
+// ============================================================================
+export interface Kse100ValuationThermometer {
+  currentKseIndex: number;
+  forwardPeRatio: number;
+  historicalAvgPeRatio: number;
+  peDiscountPercent: number;
+  buffettIndicatorPercent: number;
+  buffettHistoricalNormPercent: number;
+  sbpPolicyRatePercent: number;
+  equityEarningsYieldPercent: number;
+  yieldSpreadPercent: number;
+  marketRegime: "DEEP_VALUE" | "BULLISH_EXPANSION" | "FAIR_VALUE" | "OVERHEATED";
+  regimeTitle: string;
+  regimeSummary: string;
+  thermometerScore: number;
+  tacticalAllocation: {
+    equitiesPercent: number;
+    sovereignSukukOrGovtPercent: number;
+    goldBullionPercent: number;
+    liquidCashPercent: number;
+  };
+}
+
+export function calculateKse100ValuationThermometer(): Kse100ValuationThermometer {
+  const currentKseIndex = 93250;
+  const forwardPeRatio = 4.8;
+  const historicalAvgPeRatio = 8.2;
+  const peDiscountPercent = Math.round(((historicalAvgPeRatio - forwardPeRatio) / historicalAvgPeRatio) * 1000) / 10;
+  const buffettIndicatorPercent = 11.8;
+  const buffettHistoricalNormPercent = 24.0;
+  const sbpPolicyRatePercent = 15.0;
+  const equityEarningsYieldPercent = Math.round((100 / forwardPeRatio) * 10) / 10; // 20.8%
+  const yieldSpreadPercent = Math.round((equityEarningsYieldPercent - sbpPolicyRatePercent) * 10) / 10; // +5.8%
+  const thermometerScore = 88;
+
+  return {
+    currentKseIndex,
+    forwardPeRatio,
+    historicalAvgPeRatio,
+    peDiscountPercent,
+    buffettIndicatorPercent,
+    buffettHistoricalNormPercent,
+    sbpPolicyRatePercent,
+    equityEarningsYieldPercent,
+    yieldSpreadPercent,
+    marketRegime: "DEEP_VALUE",
+    regimeTitle: "Deep Value & High Conviction Accumulation",
+    regimeSummary:
+      "KSE-100 trades at a 41.5% discount to its 10-year historical P/E median (4.8x vs 8.2x). With SBP embarking on an aggressive monetary easing cycle and the equity earnings yield (+20.8%) strongly exceeding policy rates, historical precedent points toward major multi-year equity outperformance.",
+    thermometerScore,
+    tacticalAllocation: {
+      equitiesPercent: 65,
+      sovereignSukukOrGovtPercent: 20,
+      goldBullionPercent: 10,
+      liquidCashPercent: 5,
+    },
+  };
+}
+
+// ============================================================================
+// Module 7: Quantum Wealth Milestone / Goal Planner
+// ============================================================================
+export interface QuantumWealthGoal {
+  id: string;
+  title: string;
+  targetAmountRupees: number;
+  targetYears: number;
+  category: "wealth" | "property" | "lifestyle" | "family";
+  description: string;
+}
+
+export const PRESET_QUANTUM_GOALS: QuantumWealthGoal[] = [
+  {
+    id: "crorepati",
+    title: "First Rs. 1 Crore (Crorepati Milestone)",
+    targetAmountRupees: 10_000_000,
+    targetYears: 8,
+    category: "wealth",
+    description: "Reaching the foundational 8-figure liquid milestone that unlocks self-sustaining compound growth.",
+  },
+  {
+    id: "property",
+    title: "Dream Home / Villa in Bahria or DHA",
+    targetAmountRupees: 25_000_000,
+    targetYears: 12,
+    category: "property",
+    description: "Acquiring a prime residential property without debt or predatory bank mortgage interest.",
+  },
+  {
+    id: "freedom",
+    title: "Perpetual Financial Independence (Rs. 5 Crore)",
+    targetAmountRupees: 50_000_000,
+    targetYears: 18,
+    category: "wealth",
+    description: "Living entirely off passive dividend yields (Rs. 600,000+/mo net) with infinite capital longevity.",
+  },
+  {
+    id: "overseas_edu",
+    title: "Children Overseas Higher Education",
+    targetAmountRupees: 15_000_000,
+    targetYears: 10,
+    category: "family",
+    description: "Securing foreign tuition and living costs hedged against domestic currency depreciation.",
+  },
+  {
+    id: "vehicle",
+    title: "Premium Vehicle Upgrade",
+    targetAmountRupees: 8_000_000,
+    targetYears: 5,
+    category: "lifestyle",
+    description: "Purchasing a reliable, high-efficiency hybrid sedan with zero installment burdens.",
+  },
+  {
+    id: "hajj",
+    title: "Family Hajj & Pilgrimage",
+    targetAmountRupees: 3_500_000,
+    targetYears: 3,
+    category: "family",
+    description: "VIP private package for sacred pilgrimage with zero financial compromise.",
+  },
+];
+
+export interface QuantumGoalPlanResult {
+  nominalTargetRupees: number;
+  inflationAdjustedTargetRupees: number;
+  requiredMonthlySipRupees: number;
+  totalSelfInvestedRupees: number;
+  wealthCreatedByCompoundingRupees: number;
+  compoundingMultiplier: number;
+  feasibilityRating: "Effortless" | "Moderate" | "Aggressive" | "Ambitious";
+  probabilityScorePercent: number;
+  timelineYears: number;
+}
+
+export function calculateQuantumGoalPlan(
+  targetAmountRupees: number,
+  targetYears: number,
+  startingCapitalRupees: number = 0,
+  expectedReturnPercent: number = 15.0,
+  inflationPercent: number = 9.0
+): QuantumGoalPlanResult {
+  const years = Math.max(1, targetYears);
+  const r = expectedReturnPercent / 100;
+  const inf = inflationPercent / 100;
+
+  // Real purchasing power required in future rupees
+  const inflationMultiplier = Math.pow(1 + inf, years);
+  const inflationAdjustedTarget = Math.round(targetAmountRupees * inflationMultiplier);
+
+  // Future value of starting capital
+  const fvStartingCapital = startingCapitalRupees * Math.pow(1 + r, years);
+  const remainingNeeded = Math.max(0, inflationAdjustedTarget - fvStartingCapital);
+
+  // Monthly compounding rate
+  const monthlyRate = r / 12;
+  const totalMonths = years * 12;
+
+  let monthlySip = 0;
+  if (remainingNeeded > 0 && monthlyRate > 0) {
+    const annuityFactor = (Math.pow(1 + monthlyRate, totalMonths) - 1) / monthlyRate;
+    monthlySip = remainingNeeded / annuityFactor;
+  }
+
+  const roundedSip = Math.round(monthlySip);
+  const totalSelfInvested = Math.round(startingCapitalRupees + roundedSip * totalMonths);
+  const compoundingWealth = Math.max(0, inflationAdjustedTarget - totalSelfInvested);
+  const multiplier = totalSelfInvested > 0 ? Math.round((inflationAdjustedTarget / totalSelfInvested) * 10) / 10 : 1;
+
+  let feasibility: "Effortless" | "Moderate" | "Aggressive" | "Ambitious" = "Moderate";
+  let prob = 85;
+  if (roundedSip < 15_000) {
+    feasibility = "Effortless";
+    prob = 94;
+  } else if (roundedSip < 50_000) {
+    feasibility = "Moderate";
+    prob = 85;
+  } else if (roundedSip < 150_000) {
+    feasibility = "Aggressive";
+    prob = 72;
+  } else {
+    feasibility = "Ambitious";
+    prob = 58;
+  }
+
+  return {
+    nominalTargetRupees: targetAmountRupees,
+    inflationAdjustedTargetRupees: inflationAdjustedTarget,
+    requiredMonthlySipRupees: roundedSip,
+    totalSelfInvestedRupees: totalSelfInvested,
+    wealthCreatedByCompoundingRupees: compoundingWealth,
+    compoundingMultiplier: multiplier,
+    feasibilityRating: feasibility,
+    probabilityScorePercent: prob,
+    timelineYears: years,
   };
 }

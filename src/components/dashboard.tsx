@@ -14,6 +14,7 @@ import {
   ChartNoAxesCombined,
   ChevronDown,
   CircleDollarSign,
+  Clock,
   Clock3,
   CreditCard,
   Eye,
@@ -121,6 +122,7 @@ type DashboardProps = {
   supabase: SupabaseClient;
   section: AppSection;
   onSignedOut: () => void;
+  onExtendSession?: () => Promise<void> | void;
 };
 
 const accountIcon: Record<AccountType, typeof Wallet> = {
@@ -143,7 +145,7 @@ const accountTypeLabel: Record<AccountType, string> = {
 
 const categoryPalette = ["#2563eb", "#22a07a", "#f0a332", "#8767d9", "#ef7181", "#48a6bf"];
 
-export function Dashboard({ user, supabase, section, onSignedOut }: DashboardProps) {
+export function Dashboard({ user, supabase, section, onSignedOut, onExtendSession }: DashboardProps) {
   const today = getPakistanDateKey(new Date());
   const [accounts, setAccounts] = useState<FinanceAccount[]>([]);
   const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
@@ -172,6 +174,30 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
   const [toast, setToast] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const directSupabaseAvailableRef = useRef<boolean | null>(null);
+
+  const handleManualExtendSession = useCallback(async () => {
+    const now = Date.now();
+    try {
+      localStorage.setItem("pocketasset_last_active", String(now));
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        const channel = new BroadcastChannel("pocketasset_auth_channel");
+        channel.postMessage({ type: "EXTEND_SESSION", timestamp: now });
+        channel.close();
+      }
+    } catch {
+      // ignore
+    }
+    const sid = typeof window !== "undefined" ? localStorage.getItem("pocketasset_session_id") || "sess-current" : "sess-current";
+    void fetch("/api/auth/session-extend", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId: sid }),
+    }).catch(() => {});
+    if (onExtendSession) {
+      void onExtendSession();
+    }
+    setToast("Session extended! Active timer refreshed by 30 minutes.");
+  }, [onExtendSession]);
 
   const openEntry = useCallback((kind: EntryKind, preset?: { description: string; category: string }) => {
     setEntryPreset(preset ?? null);
@@ -439,6 +465,15 @@ export function Dashboard({ user, supabase, section, onSignedOut }: DashboardPro
             </div>
           </div>
           <div className="topbar-actions">
+            <button
+              type="button"
+              className="outline-button topbar-text-btn topbar-extend-btn"
+              onClick={() => void handleManualExtendSession()}
+              title="Extend session inactivity timer by 30 minutes"
+            >
+              <Clock size={13} className="extend-clock-icon" />
+              <span>Extend Time</span>
+            </button>
             <button
               type="button"
               className="icon-button"

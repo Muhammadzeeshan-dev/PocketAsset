@@ -7,7 +7,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL%20RLS-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com/)
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
-[![Vitest](https://img.shields.io/badge/Tests-120%20Passed-6E9F18?style=for-the-badge&logo=vitest)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Tests-123%20Passed-6E9F18?style=for-the-badge&logo=vitest)](https://vitest.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
 ---
@@ -22,19 +22,29 @@ Built specifically to handle the realities of Pakistani personal finance (PKR cu
 
 ## 🚀 Key Features
 
-### 💎 Sarmaya & Zerodha Pro Wealth Terminal (Unlocked 100% Free)
-Features typically locked behind expensive paid subscriptions (PKR 15,000–25,000/yr on Sarmaya.pk or Indian platforms like Zerodha Console / INDmoney) are provided natively and completely free:
-- **PSX Dividend & Yield Forecaster:** Track dividend yields, DPS, and payment cadences for Pakistan's premier dividend aristocrats (**FFC, HUBC, ENGRO, OGDC, MCB, EFERT, POL, MEBL**).
+### 💎 Sarmaya & Zerodha Pro Wealth Terminal v3.0 (Quantum Edition — Unlocked 100% Free)
+Features typically locked behind expensive paid subscriptions (PKR 15,000–30,000/yr on Sarmaya.pk or Indian platforms like Zerodha Console / INDmoney / Screener.in) are provided natively and completely free:
+- **PSX Dividend & Yield Forecaster:** Track dividend yields, DPS, and payment cadences for Pakistan's premier dividend aristocrats (**FFC, HUBC, ENGRO, OGDC, MCB, EFERT, POL, MEBL, LUCK, SYS, UBL, MARI**).
 - **FBR Withholding Tax Shield:** Computes exact 15% Active Filer tax vs 30% Non-Filer tax penalty under the FBR Income Tax Ordinance, quantifying exact annual tax savings.
 - **10-Year DRIP Compounder:** Compares reinvested dividend wealth growth against cash withdrawals.
+- **PSX Alpha & Multi-Factor Screener:** Institutional stock screener filtering 12 blue-chip PSX stocks across 8 sectors. Evaluates **P/E, P/B, ROE %, Beta, Graham Fair Value (Rs)**, and **Valuation Discount %** with automated Alpha Ratings (`A+`, `A`, `B+`) and Meezan KMI-30 Shariah compliance filters.
+- **KSE-100 Macro Valuation Radar & Thermometer:** Live macro indicator comparing KSE-100 Forward P/E (4.8x vs 8.2x 10Y avg, 41.5% discount), Pakistan Buffett Indicator (11.8% vs 24% norm), SBP Policy Rate (15.0%) vs Equity Yield (20.8%) spread (+5.8%), Market Regime score (88/100 Deep Value), and 4-asset tactical asset allocation.
+- **Quantum Wealth Milestone Planner:** Goal calculator with real inflation-adjusted purchasing power, required monthly SIP in Pakistani Rupees, and compounding multiplier for goals like **Crorepati (Rs. 1 Crore)**, **DHA/Bahria Home (Rs. 2.5 Crore)**, **Financial Freedom (Rs. 5 Crore)**, Overseas Education, Vehicle, and Hajj.
 - **30-Year Stochastic Monte Carlo Simulator:** Simulates 1,000 stochastic market iterations incorporating KSE-100 volatility and Pakistani CPI inflation to calculate conservative (10th %ile), base (median), and bull (90th %ile) trajectories.
-- **Crorepati Milestone Radar:** Predicts the exact age and years required to reach **Rs. 1 Crore (10 Million PKR)** and **Rs. 5 Crore (50 Million PKR)** in nominal wealth vs real inflation-adjusted purchasing power.
 - **Macro Black-Swan Stress Shield:** Tests your verified liquid balances (Cash + JazzCash + Easypaisa) against 4 major shocks:
   1. *Sudden Income Blackout* (Days of survival with zero incoming cashflow).
   2. *25% PKR Currency Devaluation* (Import inflation pass-through to domestic bills).
   3. *Unplanned Medical / Emergency Spike* (Rs. 40,000 instant liquidity hit).
   4. *Stagflation Squeeze* (+30% utility and living cost surge).
 - **Pakistan FIRE Matrix:** Calculates Lean FIRE (25x), Standard FIRE (30x), and Fat FIRE (40x) retirement corpuses tailored to Pakistani living standards.
+
+### ⏱️ Dual-Mode Session Time Extension & Cyber-HUD Security
+- **Proactive Topbar 1-Click Extension:** Prominent "Extend Time" clock button directly in the navigation header that refreshes your active login session by +30 minutes with an instant confirmation toast and server heartbeat (`/api/auth/session-extend`).
+- **Reactive Cyber-HUD Inactivity Modal:**
+  - High-tech SVG radial countdown ring with SVG stroke-dashoffset transition.
+  - Dual time extension actions: **"Extend Session (+30 Mins)"** (primary) and **"Keep Working (+60s)"** (quick bump).
+  - Immediate sign out option and keyboard shortcut handling (`Space` / `Enter` to extend).
+  - Cross-tab coordination via `BroadcastChannel` ensures all open tabs refresh simultaneously.
 
 ### 💰 Complete Liquid Cash & Multi-Wallet Management
 - **Separate Account Ledgers:** Track Cash in hand, JazzCash, Easypaisa, Bank Accounts, Savings Accounts, and Brokerage Cash Balances.

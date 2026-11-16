@@ -20,6 +20,16 @@ import {
   AlertTriangle,
   RotateCcw,
   Sparkles,
+  Search,
+  Compass,
+  Gauge,
+  Target,
+  ShieldCheck,
+  Scale,
+  PieChart,
+  Check,
+  ChevronRight,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -38,7 +48,12 @@ import {
   runMonteCarloSimulation,
   calculateMacroStressTest,
   calculateFireMatrix,
+  filterAndSortPsxStocks,
+  calculateKse100ValuationThermometer,
+  PRESET_QUANTUM_GOALS,
+  calculateQuantumGoalPlan,
   type PsxDividendStock,
+  type QuantumWealthGoal,
 } from "@/lib/sarmaya-pro";
 import { formatPkr, type FinanceAccount, type FinanceTransaction } from "@/lib/finance";
 
@@ -47,7 +62,7 @@ interface SarmayaProSuiteProps {
   transactions: FinanceTransaction[];
 }
 
-type ProTab = "dividends" | "montecarlo" | "stresstest" | "fire";
+type ProTab = "dividends" | "screener" | "cycle" | "goals" | "montecarlo" | "stresstest" | "fire";
 
 export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps) {
   const [activeTab, setActiveTab] = useState<ProTab>("dividends");
@@ -121,19 +136,84 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
   );
 
   const dripComparison = useMemo(
-    () => calculateDripGrowth(dripInitialCapital, selectedStock.dividendYieldPercent, 8.5, 10, isFiler),
+    () =>
+      calculateDripGrowth(
+        dripInitialCapital,
+        selectedStock.dividendYieldPercent,
+        8.0, // 8% expected long-term capital appreciation
+        10,
+        isFiler
+      ),
     [dripInitialCapital, selectedStock, isFiler]
   );
 
   // --------------------------------------------------------------------------
-  // Tab 2: 30-Year Monte Carlo State
+  // Tab 2: PSX Alpha & Sector Screener State
   // --------------------------------------------------------------------------
-  const currentLiquidRupees = Math.round(Number(liquidPaisa) / 100);
-  const [startingWealth, setStartingWealth] = useState<number>(Math.max(currentLiquidRupees, 15_000));
+  const [screenerSector, setScreenerSector] = useState<string>("All");
+  const [shariahOnly, setShariahOnly] = useState<boolean>(false);
+  const [screenerSortBy, setScreenerSortBy] = useState<"alpha" | "yield" | "pe" | "roe" | "discount">("alpha");
+  const [screenerSearch, setScreenerSearch] = useState<string>("");
+
+  const screenedStocks = useMemo(
+    () =>
+      filterAndSortPsxStocks(PSX_DIVIDEND_ARISTOCRATS, {
+        sector: screenerSector,
+        shariahOnly,
+        sortBy: screenerSortBy,
+        searchQuery: screenerSearch,
+      }),
+    [screenerSector, shariahOnly, screenerSortBy, screenerSearch]
+  );
+
+  const screenerSectors = useMemo(() => {
+    const list = ["All", ...new Set(PSX_DIVIDEND_ARISTOCRATS.map((s) => s.sector))];
+    return list;
+  }, []);
+
+  // --------------------------------------------------------------------------
+  // Tab 3: KSE-100 Valuation & Macro Thermometer State
+  // --------------------------------------------------------------------------
+  const thermometer = useMemo(() => calculateKse100ValuationThermometer(), []);
+
+  // --------------------------------------------------------------------------
+  // Tab 4: Quantum Wealth Goals State
+  // --------------------------------------------------------------------------
+  const [selectedGoalId, setSelectedGoalId] = useState<string>("crorepati");
+  const [customGoalTarget, setCustomGoalTarget] = useState<number>(10_000_000);
+  const [customGoalYears, setCustomGoalYears] = useState<number>(8);
+  const [goalExpectedReturn, setGoalExpectedReturn] = useState<number>(15.0);
+  const [goalInflation, setGoalInflation] = useState<number>(9.0);
+
+  const handleSelectPresetGoal = (goal: QuantumWealthGoal) => {
+    setSelectedGoalId(goal.id);
+    setCustomGoalTarget(goal.targetAmountRupees);
+    setCustomGoalYears(goal.targetYears);
+  };
+
+  const quantumGoalPlan = useMemo(
+    () =>
+      calculateQuantumGoalPlan(
+        customGoalTarget,
+        customGoalYears,
+        Number(liquidPaisa) / 100,
+        goalExpectedReturn,
+        goalInflation
+      ),
+    [customGoalTarget, customGoalYears, liquidPaisa, goalExpectedReturn, goalInflation]
+  );
+
+  // --------------------------------------------------------------------------
+  // Tab 5: 30-Year Monte Carlo Simulation State
+  // --------------------------------------------------------------------------
+  const [startingWealth, setStartingWealth] = useState<number>(() => {
+    const rupees = Number(liquidPaisa) / 100;
+    return rupees > 10_000 ? Math.round(rupees) : 100_000;
+  });
   const [monthlySIP, setMonthlySIP] = useState<number>(15_000);
-  const [expectedReturn, setExpectedReturn] = useState<number>(15); // PSX 15% CAGR historical
-  const [inflationRate, setInflationRate] = useState<number>(9.5);  // Pakistan CPI average
-  const [currentAge, setCurrentAge] = useState<number>(25);
+  const [expectedReturn, setExpectedReturn] = useState<number>(15.0);
+  const [inflationRate, setInflationRate] = useState<number>(9.5);
+  const [currentAge, setCurrentAge] = useState<number>(24);
 
   const monteCarloResult = useMemo(
     () =>
@@ -142,26 +222,26 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
         startingWealthRupees: startingWealth,
         monthlyContributionRupees: monthlySIP,
         expectedAnnualReturnPercent: expectedReturn,
-        annualVolatilityPercent: 16,
+        annualVolatilityPercent: 16.0,
         annualInflationPercent: inflationRate,
         simulationYears: 30,
       }),
     [currentAge, startingWealth, monthlySIP, expectedReturn, inflationRate]
   );
 
-  // Chart data for Monte Carlo
   const chartData = useMemo(() => {
     return monteCarloResult.projections.map((p) => ({
-      year: `Yr ${p.year} (Age ${p.age})`,
-      conservative: Math.round(p.conservativeRupees / 100_000) / 10, // In Lakhs
-      median: Math.round(p.medianRupees / 100_000) / 10,             // In Lakhs
-      optimistic: Math.round(p.optimisticRupees / 100_000) / 10,     // In Lakhs
-      realPurchasingPower: Math.round(p.realPurchasingPowerMedianRupees / 100_000) / 10, // In Lakhs
+      year: `Age ${p.age}`,
+      Conservative: Math.round(p.conservativeRupees / 100_000),
+      BaseMedian: Math.round(p.medianRupees / 100_000),
+      BullMarket: Math.round(p.optimisticRupees / 100_000),
+      RealPurchasingPower: Math.round(p.realPurchasingPowerMedianRupees / 100_000),
+      TotalInvested: Math.round(p.totalInvestedRupees / 100_000),
     }));
   }, [monteCarloResult]);
 
   // --------------------------------------------------------------------------
-  // Tab 3: Macro Shock Stress-Test State
+  // Tab 6: Macro Shock Stress-Test State
   // --------------------------------------------------------------------------
   const stressTestResult = useMemo(
     () => calculateMacroStressTest(liquidPaisa, monthlyEssentialPaisa, monthlyTotalPaisa),
@@ -169,7 +249,7 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
   );
 
   // --------------------------------------------------------------------------
-  // Tab 4: Pakistan FIRE Matrix State
+  // Tab 7: Pakistan FIRE Matrix State
   // --------------------------------------------------------------------------
   const fireMatrixResult = useMemo(
     () => calculateFireMatrix(monthlyEssentialPaisa, monthlyTotalPaisa, netWorthPaisa, monthlySavingsPaisa),
@@ -178,6 +258,36 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
 
   return (
     <div className="sarmaya-pro-container">
+      {/* Futuristic Cyber Live Ticker Strip */}
+      <div className="pro-cyber-ticker-bar">
+        <div className="cyber-ticker-pill">
+          <span className="ticker-live-dot" />
+          <span className="ticker-label">KSE-100:</span>
+          <strong className="ticker-val text-emerald">93,250 ▲ +1.42%</strong>
+        </div>
+        <div className="cyber-ticker-pill">
+          <span className="ticker-label">SBP POLICY RATE:</span>
+          <strong className="ticker-val text-cyan">15.00% ▼ -100bps</strong>
+        </div>
+        <div className="cyber-ticker-pill">
+          <span className="ticker-label">PKR / USD:</span>
+          <strong className="ticker-val text-slate">278.20 ▬ STABLE</strong>
+        </div>
+        <div className="cyber-ticker-pill">
+          <span className="ticker-label">24K GOLD:</span>
+          <strong className="ticker-val text-amber">Rs. 278,500 / Tola ▲</strong>
+        </div>
+        <div className="cyber-ticker-pill hide-on-mobile">
+          <span className="ticker-label">FORWARD P/E:</span>
+          <strong className="ticker-val text-emerald">4.8x (41.5% DISCOUNT)</strong>
+        </div>
+        <div className="cyber-ticker-pill hide-on-mobile">
+          <span className="ticker-system-status">
+            <Zap size={11} /> QUANTUM ENGINE v3.0 ACTIVE
+          </span>
+        </div>
+      </div>
+
       {/* Premium Header Banner */}
       <section className="page-heading module-page-heading pro-page-heading">
         <div>
@@ -185,14 +295,13 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
             <span className="pro-unlocked-badge">
               <Sparkles size={12} /> SARMAYA & ZERODHA PRO SUITE (UNLOCKED FREE)
             </span>
-            <span className="pro-edition-tag">Institutional FinTech v2.4</span>
+            <span className="pro-edition-tag">Institutional FinTech v3.0 Quantum</span>
           </div>
           <h1>
             Wealth & Independence Terminal<span className="heading-period">.</span>
           </h1>
           <p className="page-subtitle">
-            Premium-tier dividend forecasting, 30-year stochastic Monte Carlo projections, and economic shock
-            stress-testing — built specifically for Pakistan without any subscription paywalls.
+            Institutional-grade PSX stock screener, dividend tax forecasting, KSE-100 macro valuation radar, and 30-year stochastic Monte Carlo models — engineered for Pakistan without paywalls.
           </p>
         </div>
       </section>
@@ -212,12 +321,42 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
         <button
           type="button"
           role="tab"
+          aria-selected={activeTab === "screener"}
+          className={`pro-tab-button ${activeTab === "screener" ? "pro-tab-active" : ""}`}
+          onClick={() => setActiveTab("screener")}
+        >
+          <Compass size={15} />
+          <span>PSX Alpha Screener</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "cycle"}
+          className={`pro-tab-button ${activeTab === "cycle" ? "pro-tab-active" : ""}`}
+          onClick={() => setActiveTab("cycle")}
+        >
+          <Gauge size={15} />
+          <span>KSE-100 Valuation Radar</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "goals"}
+          className={`pro-tab-button ${activeTab === "goals" ? "pro-tab-active" : ""}`}
+          onClick={() => setActiveTab("goals")}
+        >
+          <Target size={15} />
+          <span>Quantum Wealth Goals</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-selected={activeTab === "montecarlo"}
           className={`pro-tab-button ${activeTab === "montecarlo" ? "pro-tab-active" : ""}`}
           onClick={() => setActiveTab("montecarlo")}
         >
           <Percent size={15} />
-          <span>30-Yr Monte Carlo Simulator</span>
+          <span>30-Yr Monte Carlo</span>
         </button>
         <button
           type="button"
@@ -227,7 +366,7 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
           onClick={() => setActiveTab("stresstest")}
         >
           <ShieldAlert size={15} />
-          <span>Macro Stress-Test Shield</span>
+          <span>Macro Stress Shield</span>
         </button>
         <button
           type="button"
@@ -237,7 +376,7 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
           onClick={() => setActiveTab("fire")}
         >
           <Flame size={15} />
-          <span>FIRE Independence Matrix</span>
+          <span>FIRE Matrix</span>
         </button>
       </div>
 
@@ -246,57 +385,38 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
       {/* ==================================================================== */}
       {activeTab === "dividends" && (
         <div className="pro-tab-content">
-          <div className="pro-feature-grid">
-            {/* Control Panel */}
+          <div className="pro-grid-2col">
+            {/* Stock Selection & Holding Input */}
             <div className="panel pro-card">
               <div className="panel-heading">
                 <div>
-                  <p className="panel-kicker">PSX Aristocrat Screener</p>
-                  <h2>Select Stock & Holdings</h2>
+                  <p className="panel-kicker">PSX Dividend Aristocrats</p>
+                  <h2>Select Equity & Shares</h2>
                 </div>
-                <span className="status-pill status-ready">FBR ATL Sync</span>
+                <span className="daily-count-pill">FBR 15% vs 30% WHT</span>
               </div>
               <div className="pro-card-body">
-                <div className="form-field-group">
-                  <label htmlFor="psx-stock-select">Choose PSX Dividend Stock</label>
-                  <select
-                    id="psx-stock-select"
-                    value={selectedStockTicker}
-                    onChange={(e) => setSelectedStockTicker(e.target.value)}
-                    className="pro-select"
-                  >
-                    {PSX_DIVIDEND_ARISTOCRATS.map((stock) => (
-                      <option key={stock.ticker} value={stock.ticker}>
-                        {stock.ticker} - {stock.name} ({stock.dividendYieldPercent}% Yield)
-                      </option>
-                    ))}
-                  </select>
+                <div className="stock-chips-grid">
+                  {PSX_DIVIDEND_ARISTOCRATS.map((stock) => (
+                    <button
+                      key={stock.ticker}
+                      type="button"
+                      className={`stock-select-chip ${selectedStockTicker === stock.ticker ? "stock-chip-active" : ""}`}
+                      onClick={() => setSelectedStockTicker(stock.ticker)}
+                    >
+                      <div className="stock-chip-top">
+                        <strong className="stock-ticker">{stock.ticker}</strong>
+                        <span className="stock-yield-badge">{stock.dividendYieldPercent}% Yield</span>
+                      </div>
+                      <div className="stock-chip-bottom">
+                        <span className="stock-company-name">{stock.name}</span>
+                        <span className="stock-price">Rs. {stock.priceRupees.toFixed(1)}</span>
+                      </div>
+                    </button>
+                  ))}
                 </div>
 
-                <div className="pro-stock-spec-card">
-                  <div className="spec-row">
-                    <span>Current Price</span>
-                    <strong>Rs. {selectedStock.priceRupees.toFixed(2)}</strong>
-                  </div>
-                  <div className="spec-row">
-                    <span>Annual DPS</span>
-                    <strong className="text-emerald">Rs. {selectedStock.annualDpsRupees.toFixed(2)} / share</strong>
-                  </div>
-                  <div className="spec-row">
-                    <span>Trailing Yield</span>
-                    <strong className="text-emerald">{selectedStock.dividendYieldPercent}%</strong>
-                  </div>
-                  <div className="spec-row">
-                    <span>Payout Frequency</span>
-                    <span>{selectedStock.payoutFrequency}</span>
-                  </div>
-                  <div className="spec-row">
-                    <span>Typical Ex-Months</span>
-                    <span>{selectedStock.typicalExMonths.join(", ")}</span>
-                  </div>
-                </div>
-
-                <div className="form-field-group" style={{ marginTop: "1rem" }}>
+                <div className="pro-input-group" style={{ marginTop: "1rem" }}>
                   <label htmlFor="shares-count-input">Number of Shares Held / Target</label>
                   <input
                     id="shares-count-input"
@@ -439,7 +559,551 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
       )}
 
       {/* ==================================================================== */}
-      {/* TAB 2: 30-Year Monte Carlo Wealth Trajectory Engine                  */}
+      {/* TAB 2: PSX Alpha & Sector Screener Engine (NEW)                      */}
+      {/* ==================================================================== */}
+      {activeTab === "screener" && (
+        <div className="pro-tab-content">
+          <div className="panel pro-card screener-filter-panel">
+            <div className="panel-heading">
+              <div>
+                <p className="panel-kicker">Institutional Multi-Factor Screener</p>
+                <h2>PSX Alpha & Valuation Scanner</h2>
+              </div>
+              <span className="daily-count-pill">{screenedStocks.length} Equities Filtered</span>
+            </div>
+            <div className="pro-card-body">
+              {/* Search and Quick Filters */}
+              <div className="screener-controls-bar">
+                <div className="screener-search-wrap">
+                  <Search size={15} className="screener-search-icon" />
+                  <input
+                    type="text"
+                    value={screenerSearch}
+                    onChange={(e) => setScreenerSearch(e.target.value)}
+                    placeholder="Search ticker, company name, or sector (e.g. FFC, Meezan, Oil)..."
+                    className="screener-search-input"
+                  />
+                  {screenerSearch && (
+                    <button type="button" onClick={() => setScreenerSearch("")} className="screener-clear-btn">
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  className={`shariah-toggle-pill ${shariahOnly ? "active" : ""}`}
+                  onClick={() => setShariahOnly(!shariahOnly)}
+                >
+                  <ShieldCheck size={14} />
+                  <span>Meezan Shariah Certified Only</span>
+                </button>
+              </div>
+
+              {/* Sector Filter Chips */}
+              <div className="screener-sector-chips-wrap">
+                <span className="screener-filter-label">Filter by Sector:</span>
+                <div className="screener-sector-chips">
+                  {screenerSectors.map((sec) => (
+                    <button
+                      key={sec}
+                      type="button"
+                      className={`screener-sector-chip ${screenerSector === sec ? "active" : ""}`}
+                      onClick={() => setScreenerSector(sec)}
+                    >
+                      {sec}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sort By Tabs */}
+              <div className="screener-sort-bar">
+                <span className="screener-filter-label">Sort Equities by:</span>
+                <div className="screener-sort-buttons">
+                  <button
+                    type="button"
+                    className={`sort-pill ${screenerSortBy === "alpha" ? "active" : ""}`}
+                    onClick={() => setScreenerSortBy("alpha")}
+                  >
+                    ⭐ Alpha Score (Highest)
+                  </button>
+                  <button
+                    type="button"
+                    className={`sort-pill ${screenerSortBy === "yield" ? "active" : ""}`}
+                    onClick={() => setScreenerSortBy("yield")}
+                  >
+                    💰 Dividend Yield (%)
+                  </button>
+                  <button
+                    type="button"
+                    className={`sort-pill ${screenerSortBy === "discount" ? "active" : ""}`}
+                    onClick={() => setScreenerSortBy("discount")}
+                  >
+                    🎯 Graham Discount (%)
+                  </button>
+                  <button
+                    type="button"
+                    className={`sort-pill ${screenerSortBy === "pe" ? "active" : ""}`}
+                    onClick={() => setScreenerSortBy("pe")}
+                  >
+                    📉 P/E Ratio (Lowest)
+                  </button>
+                  <button
+                    type="button"
+                    className={`sort-pill ${screenerSortBy === "roe" ? "active" : ""}`}
+                    onClick={() => setScreenerSortBy("roe")}
+                  >
+                    📈 ROE % (Highest)
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Screened Stocks Cards Grid */}
+          <div className="screener-cards-grid">
+            {screenedStocks.map((stock) => (
+              <div key={stock.ticker} className="panel pro-card screener-stock-card">
+                <div className="stock-card-header">
+                  <div className="stock-identity">
+                    <span className="stock-ticker-badge">{stock.ticker}</span>
+                    <div>
+                      <strong className="stock-full-name">{stock.name}</strong>
+                      <span className="stock-sector-tag">{stock.sector}</span>
+                    </div>
+                  </div>
+                  <div className="stock-badges">
+                    {stock.isShariahCompliant && (
+                      <span className="shariah-certified-badge" title="Shariah Compliant according to Meezan Islamic screening rules">
+                        <Check size={11} /> Shariah
+                      </span>
+                    )}
+                    <span className={`alpha-rating-badge grade-${stock.alphaRating?.toLowerCase().replace("+", "-plus")}`}>
+                      Alpha {stock.alphaRating}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="stock-card-price-row">
+                  <div>
+                    <span className="price-subtext">Current Market Price</span>
+                    <strong className="stock-main-price">Rs. {stock.priceRupees.toFixed(1)}</strong>
+                  </div>
+                  <div className="stock-yield-pill">
+                    <span>Dividend Yield</span>
+                    <strong>{stock.dividendYieldPercent}%</strong>
+                  </div>
+                </div>
+
+                <div className="stock-stats-matrix">
+                  <div className="stat-matrix-cell">
+                    <span>P/E Ratio</span>
+                    <strong>{stock.peRatio ?? "—"}x</strong>
+                  </div>
+                  <div className="stat-matrix-cell">
+                    <span>P/B Ratio</span>
+                    <strong>{stock.pbRatio ?? "—"}x</strong>
+                  </div>
+                  <div className="stat-matrix-cell">
+                    <span>ROE (%)</span>
+                    <strong className="text-emerald">{stock.roePercent ?? "—"}%</strong>
+                  </div>
+                  <div className="stat-matrix-cell">
+                    <span>Annual DPS</span>
+                    <strong>Rs. {stock.annualDpsRupees}</strong>
+                  </div>
+                </div>
+
+                <div className="graham-valuation-bar">
+                  <div className="graham-val-left">
+                    <span>Graham Fair Value:</span>
+                    <strong>Rs. {stock.grahamFairValueRupees?.toFixed(1) ?? "—"}</strong>
+                  </div>
+                  <div className="graham-discount-pill">
+                    {stock.valuationDiscountPercent && stock.valuationDiscountPercent > 0 ? (
+                      <span className="text-emerald">+{stock.valuationDiscountPercent}% Undervalued</span>
+                    ) : (
+                      <span className="text-slate">Fair Value</span>
+                    )}
+                  </div>
+                </div>
+
+                <p className="screener-card-desc">{stock.description}</p>
+
+                <button
+                  type="button"
+                  className="screener-select-btn"
+                  onClick={() => {
+                    setSelectedStockTicker(stock.ticker);
+                    setActiveTab("dividends");
+                  }}
+                >
+                  <span>Forecast Dividends for {stock.ticker}</span>
+                  <ArrowRight size={13} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* TAB 3: KSE-100 Valuation & Macro Thermometer (NEW)                   */}
+      {/* ==================================================================== */}
+      {activeTab === "cycle" && (
+        <div className="pro-tab-content">
+          {/* Main Regime Beacon Card */}
+          <div className="panel pro-card kse-regime-hero-card">
+            <div className="regime-hero-top">
+              <div className="regime-status-beacon">
+                <span className="beacon-radar-pulse" />
+                <span className="regime-status-title">MARKET REGIME: {thermometer.regimeTitle}</span>
+              </div>
+              <div className="regime-score-badge">
+                <Gauge size={16} />
+                <span>Value Score: <strong>{thermometer.thermometerScore} / 100</strong></span>
+              </div>
+            </div>
+
+            <p className="regime-hero-summary">{thermometer.regimeSummary}</p>
+
+            {/* Valuation Thermometer Visual Track */}
+            <div className="thermometer-visual-track-wrap">
+              <div className="thermometer-track-labels">
+                <span>Severe Bubble (&gt;15x)</span>
+                <span>Fair Value (8.2x)</span>
+                <span>Deep Bargain Value (&lt;5x)</span>
+              </div>
+              <div className="thermometer-track-bar">
+                <div
+                  className="thermometer-track-fill"
+                  style={{ width: `${thermometer.thermometerScore}%` }}
+                />
+                <div
+                  className="thermometer-pointer"
+                  style={{ left: `${thermometer.thermometerScore}%` }}
+                >
+                  <span className="pointer-tag">KSE-100 Now (4.8x P/E)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 4 Pillar Macro Metrics */}
+          <div className="macro-pillar-grid">
+            <div className="panel pro-card macro-metric-card">
+              <span className="macro-pillar-kicker">Valuation Multiples</span>
+              <h3>Forward P/E Ratio</h3>
+              <strong className="macro-big-num text-emerald">{thermometer.forwardPeRatio}x</strong>
+              <div className="macro-comparison-sub">
+                <span>10-Yr Historical Median: <strong>{thermometer.historicalAvgPeRatio}x</strong></span>
+                <span className="text-emerald"><strong>+{thermometer.peDiscountPercent}%</strong> valuation discount</span>
+              </div>
+            </div>
+
+            <div className="panel pro-card macro-metric-card">
+              <span className="macro-pillar-kicker">Pakistan Buffett Indicator</span>
+              <h3>Market Cap to GDP</h3>
+              <strong className="macro-big-num text-cyan">{thermometer.buffettIndicatorPercent}%</strong>
+              <div className="macro-comparison-sub">
+                <span>Historical Norm: <strong>{thermometer.buffettHistoricalNormPercent}%</strong></span>
+                <span className="text-cyan">Extreme asset undervaluation territory</span>
+              </div>
+            </div>
+
+            <div className="panel pro-card macro-metric-card">
+              <span className="macro-pillar-kicker">Yield Spread Advantage</span>
+              <h3>Earnings Yield Spread</h3>
+              <strong className="macro-big-num text-emerald">+{thermometer.yieldSpreadPercent}%</strong>
+              <div className="macro-comparison-sub">
+                <span>PSX Earnings Yield: <strong>{thermometer.equityEarningsYieldPercent}%</strong></span>
+                <span>SBP Policy Rate: <strong>{thermometer.sbpPolicyRatePercent}%</strong></span>
+              </div>
+            </div>
+
+            <div className="panel pro-card macro-metric-card">
+              <span className="macro-pillar-kicker">Monetary Supercycle</span>
+              <h3>Monetary Easing</h3>
+              <strong className="macro-big-num text-amber">Rate Cut Cycle</strong>
+              <div className="macro-comparison-sub">
+                <span>Policy Rate dropped from 22% &rarr; 15%</span>
+                <span className="text-emerald">Historically powers 150%+ multi-year bull runs</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Tactical Asset Allocation Recommendation */}
+          <div className="panel pro-card tactical-allocation-panel" style={{ marginTop: "1.2rem" }}>
+            <div className="panel-heading">
+              <div>
+                <p className="panel-kicker">Institutional Portfolio Strategy</p>
+                <h2>Recommended Tactical Asset Allocation</h2>
+              </div>
+              <span className="daily-count-pill">Based on 4.8x Forward P/E Regime</span>
+            </div>
+            <div className="pro-card-body">
+              <div className="allocation-bars-container">
+                <div className="allocation-bar-segment segment-equity" style={{ width: `${thermometer.tacticalAllocation.equitiesPercent}%` }}>
+                  <span>Equities ({thermometer.tacticalAllocation.equitiesPercent}%)</span>
+                </div>
+                <div className="allocation-bar-segment segment-sukuk" style={{ width: `${thermometer.tacticalAllocation.sovereignSukukOrGovtPercent}%` }}>
+                  <span>Sukuk / T-Bills ({thermometer.tacticalAllocation.sovereignSukukOrGovtPercent}%)</span>
+                </div>
+                <div className="allocation-bar-segment segment-gold" style={{ width: `${thermometer.tacticalAllocation.goldBullionPercent}%` }}>
+                  <span>Gold ({thermometer.tacticalAllocation.goldBullionPercent}%)</span>
+                </div>
+                <div className="allocation-bar-segment segment-cash" style={{ width: `${thermometer.tacticalAllocation.liquidCashPercent}%` }}>
+                  <span>Cash ({thermometer.tacticalAllocation.liquidCashPercent}%)</span>
+                </div>
+              </div>
+
+              <div className="allocation-legend-grid">
+                <div className="allocation-legend-item">
+                  <span className="legend-swatch swatch-equity" />
+                  <div>
+                    <strong>{thermometer.tacticalAllocation.equitiesPercent}% PSX Bluechip & High-Yield Equities</strong>
+                    <p>Allocate heavily to cash-rich dividend aristocrats (FFC, HUBC, OGDC, MEBL) during low valuation regimes.</p>
+                  </div>
+                </div>
+                <div className="allocation-legend-item">
+                  <span className="legend-swatch swatch-sukuk" />
+                  <div>
+                    <strong>{thermometer.tacticalAllocation.sovereignSukukOrGovtPercent}% Sovereign Sukuk / Govt T-Bills</strong>
+                    <p>Lock in double-digit fixed returns before interest rates drop further toward single digits.</p>
+                  </div>
+                </div>
+                <div className="allocation-legend-item">
+                  <span className="legend-swatch swatch-gold" />
+                  <div>
+                    <strong>{thermometer.tacticalAllocation.goldBullionPercent}% Physical 24K Gold / Forex Hedge</strong>
+                    <p>Impervious shield protecting purchasing power against sudden domestic currency shocks.</p>
+                  </div>
+                </div>
+                <div className="allocation-legend-item">
+                  <span className="legend-swatch swatch-cash" />
+                  <div>
+                    <strong>{thermometer.tacticalAllocation.liquidCashPercent}% Instant Emergency Cash</strong>
+                    <p>Kept in high-yield daily profit savings accounts (JazzCash, Easypaisa, or Islamic savings).</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* TAB 4: Quantum Wealth Milestone / Goal Planner (NEW)                 */}
+      {/* ==================================================================== */}
+      {activeTab === "goals" && (
+        <div className="pro-tab-content">
+          {/* Preset Goal Cards Grid */}
+          <div className="quantum-goal-presets-grid">
+            {PRESET_QUANTUM_GOALS.map((g) => (
+              <button
+                key={g.id}
+                type="button"
+                className={`quantum-goal-card ${selectedGoalId === g.id ? "active" : ""}`}
+                onClick={() => handleSelectPresetGoal(g)}
+              >
+                <div className="goal-card-top">
+                  <Target size={18} className="goal-icon" />
+                  <span className="goal-years-tag">{g.targetYears} Years Target</span>
+                </div>
+                <strong className="goal-card-title">{g.title}</strong>
+                <span className="goal-card-amount">Target: Rs. {(g.targetAmountRupees / 100_000).toLocaleString()} Lakhs</span>
+                <p className="goal-card-desc">{g.description}</p>
+              </button>
+            ))}
+          </div>
+
+          <div className="pro-grid-2col" style={{ marginTop: "1.2rem" }}>
+            {/* Goal Input Controls */}
+            <div className="panel pro-card">
+              <div className="panel-heading">
+                <div>
+                  <p className="panel-kicker">Quantum SIP Engine</p>
+                  <h2>Calibrate Goal Parameters</h2>
+                </div>
+                <span className="daily-count-pill">Calculated in Real Terms</span>
+              </div>
+              <div className="pro-card-body">
+                <div className="pro-input-group">
+                  <label htmlFor="goal-target-amount">Nominal Target Amount (PKR)</label>
+                  <input
+                    id="goal-target-amount"
+                    type="number"
+                    step={500_000}
+                    value={customGoalTarget}
+                    onChange={(e) => {
+                      setSelectedGoalId("custom");
+                      setCustomGoalTarget(Math.max(100_000, Number(e.target.value)));
+                    }}
+                    className="pro-input"
+                  />
+                  <small className="field-hint">
+                    Target in Rupees: Rs. {customGoalTarget.toLocaleString()} ({(customGoalTarget / 100_000).toFixed(1)} Lakhs)
+                  </small>
+                </div>
+
+                <div className="slider-group" style={{ marginTop: "1rem" }}>
+                  <div className="slider-label-row">
+                    <span>Investment Timeline:</span>
+                    <strong>{customGoalYears} Years ({customGoalYears * 12} Months)</strong>
+                  </div>
+                  <input
+                    type="range"
+                    min={1}
+                    max={25}
+                    step={1}
+                    value={customGoalYears}
+                    onChange={(e) => setCustomGoalYears(Number(e.target.value))}
+                    className="pro-range"
+                  />
+                  <div className="slider-quick-presets">
+                    {[3, 5, 8, 10, 15, 20].map((yr) => (
+                      <button
+                        key={yr}
+                        type="button"
+                        className={`slider-preset-chip ${customGoalYears === yr ? "active" : ""}`}
+                        onClick={() => setCustomGoalYears(yr)}
+                      >
+                        {yr} Yrs
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="slider-group" style={{ marginTop: "1rem" }}>
+                  <div className="slider-label-row">
+                    <span>Expected Annual Return:</span>
+                    <strong>{goalExpectedReturn}% / year</strong>
+                  </div>
+                  <input
+                    type="range"
+                    min={8}
+                    max={25}
+                    step={0.5}
+                    value={goalExpectedReturn}
+                    onChange={(e) => setGoalExpectedReturn(Number(e.target.value))}
+                    className="pro-range"
+                  />
+                  <div className="slider-quick-presets">
+                    {[12, 15, 18, 20].map((ret) => (
+                      <button
+                        key={ret}
+                        type="button"
+                        className={`slider-preset-chip ${goalExpectedReturn === ret ? "active" : ""}`}
+                        onClick={() => setGoalExpectedReturn(ret)}
+                      >
+                        {ret}%
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="slider-group" style={{ marginTop: "1rem" }}>
+                  <div className="slider-label-row">
+                    <span>Expected Pakistan CPI Inflation:</span>
+                    <strong>{goalInflation}% / year</strong>
+                  </div>
+                  <input
+                    type="range"
+                    min={5}
+                    max={20}
+                    step={0.5}
+                    value={goalInflation}
+                    onChange={(e) => setGoalInflation(Number(e.target.value))}
+                    className="pro-range"
+                  />
+                  <div className="slider-quick-presets">
+                    {[7, 9, 12, 15].map((inf) => (
+                      <button
+                        key={inf}
+                        type="button"
+                        className={`slider-preset-chip ${goalInflation === inf ? "active" : ""}`}
+                        onClick={() => setGoalInflation(inf)}
+                      >
+                        {inf}%
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Goal Plan Output Dashboard */}
+            <div className="panel pro-card quantum-plan-result-card">
+              <div className="panel-heading">
+                <div>
+                  <p className="panel-kicker">Required Investment Action</p>
+                  <h2>Quantum Goal Trajectory</h2>
+                </div>
+                <span className="daily-count-pill">{quantumGoalPlan.feasibilityRating} Target</span>
+              </div>
+              <div className="pro-card-body">
+                <div className="quantum-sip-display-box">
+                  <span className="sip-caption">Required Monthly SIP</span>
+                  <strong className="sip-big-number">
+                    Rs. {quantumGoalPlan.requiredMonthlySipRupees.toLocaleString()} / mo
+                  </strong>
+                  <small>To reach future purchasing power across {quantumGoalPlan.timelineYears} years</small>
+                </div>
+
+                <div className="quantum-breakdown-matrix">
+                  <div className="quantum-stat-cell">
+                    <span>Nominal Target</span>
+                    <strong>Rs. {(quantumGoalPlan.nominalTargetRupees / 100_000).toFixed(1)} Lakhs</strong>
+                  </div>
+                  <div className="quantum-stat-cell">
+                    <span>Inflation-Adjusted Target</span>
+                    <strong className="text-cyan">Rs. {(quantumGoalPlan.inflationAdjustedTargetRupees / 100_000).toFixed(1)} Lakhs</strong>
+                  </div>
+                  <div className="quantum-stat-cell">
+                    <span>Total Self-Invested</span>
+                    <strong>Rs. {(quantumGoalPlan.totalSelfInvestedRupees / 100_000).toFixed(1)} Lakhs</strong>
+                  </div>
+                  <div className="quantum-stat-cell">
+                    <span>Compounding Wealth Created</span>
+                    <strong className="text-emerald">+Rs. {(quantumGoalPlan.wealthCreatedByCompoundingRupees / 100_000).toFixed(1)} Lakhs</strong>
+                  </div>
+                </div>
+
+                <div className="multiplier-highlight-box">
+                  <Sparkles size={20} className="text-amber" />
+                  <div>
+                    <strong>{quantumGoalPlan.compoundingMultiplier}x Wealth Multiplier</strong>
+                    <p>
+                      Compounding creates{" "}
+                      <strong>
+                        Rs. {(quantumGoalPlan.wealthCreatedByCompoundingRupees / 100_000).toFixed(1)} Lakhs
+                      </strong>{" "}
+                      of your goal for free, meaning self-discipline pays only a fraction of the cost.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="probability-meter-box">
+                  <div className="probability-label-row">
+                    <span>Milestone Probability Score</span>
+                    <strong className="text-emerald">{quantumGoalPlan.probabilityScorePercent}% Probability</strong>
+                  </div>
+                  <div className="probability-track">
+                    <div
+                      className="probability-fill"
+                      style={{ width: `${quantumGoalPlan.probabilityScorePercent}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* TAB 5: 30-Year Monte Carlo Wealth Trajectory Engine                  */}
       {/* ==================================================================== */}
       {activeTab === "montecarlo" && (
         <div className="pro-tab-content">
@@ -448,131 +1112,130 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
             <div className="milestone-badge-box">
               <Award size={24} className="milestone-icon" />
               <div>
-                <span className="milestone-caption">Milestone 1 (Rs. 1 Crore / 10M)</span>
-                <strong>
+                <strong>Rs. 1 Crore (Crorepati) Milestone</strong>
+                <span>
                   {monteCarloResult.milestones.yearsToOneCrore
-                    ? `Reached in ${monteCarloResult.milestones.yearsToOneCrore} Years (Age ${
-                        currentAge + monteCarloResult.milestones.yearsToOneCrore
-                      })`
-                    : "Over 30 Years"}
-                </strong>
-                <small>{monteCarloResult.milestones.probabilityOfReachingOneCrorePercent}% Probability</small>
+                    ? `Reached in Year ${monteCarloResult.milestones.yearsToOneCrore} (Age ${currentAge + monteCarloResult.milestones.yearsToOneCrore})`
+                    : "Increase SIP or timeline to reach Rs. 1 Crore"}
+                </span>
+                <small>{monteCarloResult.milestones.probabilityOfReachingOneCrorePercent}% Historical Probability</small>
               </div>
             </div>
+
             <div className="milestone-badge-box">
-              <Zap size={24} className="milestone-icon text-amber" />
+              <Zap size={24} className="milestone-icon icon-zap" />
               <div>
-                <span className="milestone-caption">Milestone 2 (Rs. 5 Crore / 50M)</span>
-                <strong>
+                <strong>Rs. 2.5 Crore (Multi-Millionaire)</strong>
+                <span>
+                  {monteCarloResult.milestones.yearsToTwoPointFiveCrore
+                    ? `Reached in Year ${monteCarloResult.milestones.yearsToTwoPointFiveCrore} (Age ${currentAge + monteCarloResult.milestones.yearsToTwoPointFiveCrore})`
+                    : "Projected past Year 30"}
+                </span>
+                <small>Median Capital Compound Trajectory</small>
+              </div>
+            </div>
+
+            <div className="milestone-badge-box">
+              <Award size={24} className="milestone-icon icon-emerald" />
+              <div>
+                <strong>Rs. 5 Crore (Generational Freedom)</strong>
+                <span>
                   {monteCarloResult.milestones.yearsToFiveCrore
-                    ? `Reached in ${monteCarloResult.milestones.yearsToFiveCrore} Years (Age ${
-                        currentAge + monteCarloResult.milestones.yearsToFiveCrore
-                      })`
-                    : "Over 30 Years"}
-                </strong>
-                <small>{monteCarloResult.milestones.probabilityOfReachingFiveCrorePercent}% Probability</small>
-              </div>
-            </div>
-            <div className="milestone-badge-box">
-              <CheckCircle2 size={24} className="milestone-icon text-emerald" />
-              <div>
-                <span className="milestone-caption">30-Year Median Net Worth</span>
-                <strong className="text-emerald">
-                  Rs.{" "}
-                  {(
-                    (monteCarloResult.projections[monteCarloResult.projections.length - 1]?.medianRupees ?? 0) /
-                    10_000_000
-                  ).toFixed(2)}{" "}
-                  Crore
-                </strong>
-                <small>Nominal projection</small>
+                    ? `Reached in Year ${monteCarloResult.milestones.yearsToFiveCrore} (Age ${currentAge + monteCarloResult.milestones.yearsToFiveCrore})`
+                    : "Extends beyond 30-year horizon"}
+                </span>
+                <small>{monteCarloResult.milestones.probabilityOfReachingFiveCrorePercent}% Historical Probability</small>
               </div>
             </div>
           </div>
 
-          <div className="pro-feature-grid" style={{ marginTop: "1rem" }}>
-            {/* Simulator Interactive Inputs */}
+          <div className="pro-grid-monte-carlo">
+            {/* Simulation Interactive Sliders */}
             <div className="panel pro-card">
               <div className="panel-heading">
                 <div>
-                  <p className="panel-kicker">Stochastic Parameters</p>
-                  <h2>Interactive Controls</h2>
+                  <p className="panel-kicker">Quantum Simulation Controls</p>
+                  <h2>Interactive Wealth Parameters</h2>
                 </div>
                 <button
                   type="button"
-                  className="icon-button subtle"
                   onClick={() => {
-                    setStartingWealth(currentLiquidRupees);
+                    setStartingWealth(100_000);
                     setMonthlySIP(15_000);
-                    setExpectedReturn(15);
+                    setExpectedReturn(15.0);
                     setInflationRate(9.5);
+                    setCurrentAge(24);
                   }}
-                  title="Reset to defaults"
+                  className="pro-reset-btn"
+                  title="Reset to default Pakistani benchmarks"
                 >
-                  <RotateCcw size={14} />
+                  <RotateCcw size={13} /> Reset
                 </button>
               </div>
-              <div className="pro-card-body">
+              <div className="pro-card-body pro-sliders-body">
+                {/* Starting Wealth */}
                 <div className="slider-group">
                   <div className="slider-label-row">
-                    <span>Starting Wealth</span>
+                    <span>Starting Liquid Capital:</span>
                     <strong>Rs. {startingWealth.toLocaleString()}</strong>
                   </div>
                   <input
                     type="range"
                     min={0}
-                    max={500_000}
-                    step={5_000}
+                    max={2_000_000}
+                    step={10_000}
                     value={startingWealth}
                     onChange={(e) => setStartingWealth(Number(e.target.value))}
                     className="pro-range"
                   />
                   <div className="slider-quick-presets">
-                    {[0, 10000, 50000, 100000, 250000, 500000].map((preset) => (
+                    {[10_000, 50_000, 100_000, 500_000, 1_000_000].map((preset) => (
                       <button
                         key={preset}
                         type="button"
-                        onClick={() => setStartingWealth(preset)}
                         className={`slider-preset-chip ${startingWealth === preset ? "active" : ""}`}
+                        onClick={() => setStartingWealth(preset)}
                       >
-                        {preset === 0 ? "Rs. 0" : `Rs. ${preset / 1000}k`}
+                        Rs. {(preset / 1000).toFixed(0)}k
                       </button>
                     ))}
                   </div>
                 </div>
 
+                {/* Monthly SIP */}
                 <div className="slider-group">
                   <div className="slider-label-row">
-                    <span>Monthly Investment (SIP)</span>
+                    <span>Monthly Investment (SIP):</span>
                     <strong className="text-emerald">Rs. {monthlySIP.toLocaleString()} / mo</strong>
                   </div>
                   <input
                     type="range"
-                    min={2_000}
-                    max={150_000}
+                    min={1_000}
+                    max={200_000}
                     step={1_000}
                     value={monthlySIP}
                     onChange={(e) => setMonthlySIP(Number(e.target.value))}
                     className="pro-range"
                   />
                   <div className="slider-quick-presets">
-                    {[5000, 15000, 25000, 50000, 100000].map((preset) => (
+                    {[5_000, 10_000, 20_000, 50_000, 100_000].map((preset) => (
                       <button
                         key={preset}
                         type="button"
-                        onClick={() => setMonthlySIP(preset)}
                         className={`slider-preset-chip ${monthlySIP === preset ? "active" : ""}`}
+                        onClick={() => setMonthlySIP(preset)}
                       >
-                        Rs. {preset / 1000}k/mo
+                        Rs. {(preset / 1000).toFixed(0)}k
                       </button>
                     ))}
                   </div>
                 </div>
 
+                {/* Expected Return */}
                 <div className="slider-group">
                   <div className="slider-label-row">
-                    <span>Expected Annual PSX Return</span>
-                    <strong>{expectedReturn}% CAGR</strong>
+                    <span>Expected Return (PSX / Funds):</span>
+                    <strong>{expectedReturn}% / year</strong>
                   </div>
                   <input
                     type="range"
@@ -584,28 +1247,29 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
                     className="pro-range"
                   />
                   <div className="slider-quick-presets">
-                    {[12, 14.8, 18, 22].map((preset) => (
+                    {[12, 15, 17.5, 20].map((preset) => (
                       <button
                         key={preset}
                         type="button"
-                        onClick={() => setExpectedReturn(preset)}
                         className={`slider-preset-chip ${expectedReturn === preset ? "active" : ""}`}
+                        onClick={() => setExpectedReturn(preset)}
                       >
-                        {preset === 14.8 ? "14.8% (KSE-100 Avg)" : `${preset}%`}
+                        {preset}%
                       </button>
                     ))}
                   </div>
                 </div>
 
+                {/* Inflation Rate */}
                 <div className="slider-group">
                   <div className="slider-label-row">
-                    <span>Pakistani CPI Inflation Rate</span>
-                    <strong className="text-rose">{inflationRate}% / year</strong>
+                    <span>Pakistan CPI Inflation:</span>
+                    <strong>{inflationRate}% / year</strong>
                   </div>
                   <input
                     type="range"
                     min={5}
-                    max={18}
+                    max={20}
                     step={0.5}
                     value={inflationRate}
                     onChange={(e) => setInflationRate(Number(e.target.value))}
@@ -616,19 +1280,20 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
                       <button
                         key={preset}
                         type="button"
-                        onClick={() => setInflationRate(preset)}
                         className={`slider-preset-chip ${inflationRate === preset ? "active" : ""}`}
+                        onClick={() => setInflationRate(preset)}
                       >
-                        {preset === 9.5 ? "9.5% (Avg)" : `${preset}%`}
+                        {preset}%
                       </button>
                     ))}
                   </div>
                 </div>
 
+                {/* Current Age */}
                 <div className="slider-group">
                   <div className="slider-label-row">
-                    <span>Current Age</span>
-                    <strong>{currentAge} Years</strong>
+                    <span>Current Age:</span>
+                    <strong>{currentAge} Years Old</strong>
                   </div>
                   <input
                     type="range"
@@ -640,12 +1305,12 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
                     className="pro-range"
                   />
                   <div className="slider-quick-presets">
-                    {[20, 25, 30, 35, 40].map((preset) => (
+                    {[20, 25, 30, 40].map((preset) => (
                       <button
                         key={preset}
                         type="button"
-                        onClick={() => setCurrentAge(preset)}
                         className={`slider-preset-chip ${currentAge === preset ? "active" : ""}`}
+                        onClick={() => setCurrentAge(preset)}
                       >
                         Age {preset}
                       </button>
@@ -655,71 +1320,80 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
               </div>
             </div>
 
-            {/* Monte Carlo Visual Chart */}
+            {/* Area Chart: 30-Year Trajectory */}
             <div className="panel pro-card">
               <div className="panel-heading">
                 <div>
-                  <p className="panel-kicker">30-Year Trajectory Cone (In Lakhs PKR)</p>
-                  <h2>Stochastic Probability Bands</h2>
+                  <p className="panel-kicker">Stochastic Wealth Fan (1,000 Iterations)</p>
+                  <h2>30-Year Trajectory (in Lakhs PKR)</h2>
                 </div>
-                <span className="daily-count-pill">1,000 Iterations</span>
+                <span className="daily-count-pill">Inflation-Adjusted Purchasing Power</span>
               </div>
-              <div className="pro-card-body pro-chart-body" style={{ height: "350px", paddingBottom: "1rem" }}>
-                <ResponsiveContainer width="100%" height="100%">
+              <div className="pro-card-body pro-chart-body">
+                <ResponsiveContainer width="100%" height={380}>
                   <AreaChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                     <defs>
-                      <linearGradient id="optGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#2468db" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#2468db" stopOpacity={0.0} />
+                      <linearGradient id="bullGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
                       </linearGradient>
-                      <linearGradient id="medGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#278669" stopOpacity={0.5} />
-                        <stop offset="95%" stopColor="#278669" stopOpacity={0.05} />
+                      <linearGradient id="medianGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.5} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05} />
                       </linearGradient>
                       <linearGradient id="realGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#bf8c39" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#bf8c39" stopOpacity={0.0} />
+                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e8edf3" />
-                    <XAxis dataKey="year" tick={{ fontSize: 10 }} stroke="#8b97a7" />
-                    <YAxis
-                      tick={{ fontSize: 10 }}
-                      stroke="#8b97a7"
-                      tickFormatter={(val) => `${val}L`}
-                    />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="year" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 10 }} tickFormatter={(val) => `${val}L`} />
                     <RechartsTooltip
                       formatter={(val: any) => [`Rs. ${Number(val).toLocaleString()} Lakhs`, ""]}
                       contentStyle={{
                         borderRadius: "8px",
-                        border: "1px solid #dce8fc",
-                        fontSize: "11px",
+                        border: "1px solid #e2e8f0",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                        fontSize: "12px",
                       }}
                     />
-                    <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "5px" }} />
+                    <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />
                     <Area
                       type="monotone"
-                      dataKey="optimistic"
-                      name="Bull Case (90th %ile)"
-                      stroke="#2468db"
+                      dataKey="BullMarket"
+                      stroke="#10b981"
+                      strokeWidth={2}
                       fillOpacity={1}
-                      fill="url(#optGrad)"
+                      fill="url(#bullGrad)"
+                      name="Bull Market (90th %ile)"
                     />
                     <Area
                       type="monotone"
-                      dataKey="median"
+                      dataKey="BaseMedian"
+                      stroke="#3b82f6"
+                      strokeWidth={2.5}
+                      fillOpacity={1}
+                      fill="url(#medianGrad)"
                       name="Base Case (Median)"
-                      stroke="#278669"
-                      fillOpacity={1}
-                      fill="url(#medGrad)"
                     />
                     <Area
                       type="monotone"
-                      dataKey="realPurchasingPower"
-                      name="Real CPI Purchasing Power"
-                      stroke="#bf8c39"
+                      dataKey="RealPurchasingPower"
+                      stroke="#f59e0b"
+                      strokeWidth={2}
+                      strokeDasharray="4 4"
                       fillOpacity={1}
                       fill="url(#realGrad)"
+                      name="Real Purchasing Power"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="TotalInvested"
+                      stroke="#94a3b8"
+                      strokeWidth={1.5}
+                      fill="none"
+                      name="Capital Contributed"
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -730,72 +1404,55 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
       )}
 
       {/* ==================================================================== */}
-      {/* TAB 3: Macroeconomic Shock Stress-Test Shield                        */}
+      {/* TAB 6: Macro Black-Swan Stress Shield                                */}
       {/* ==================================================================== */}
       {activeTab === "stresstest" && (
         <div className="pro-tab-content">
-          <div className="stress-test-header-card">
-            <div className="stress-score-gauge">
-              <div className="gauge-number">{stressTestResult.resilienceScore}</div>
-              <span className="gauge-label">Resilience Index / 100</span>
-            </div>
-            <div className="stress-header-copy">
-              <h3>Institutional Liquidity & Shock Defense Shield</h3>
-              <p>
-                Calculated directly from your verified liquid balances (Cash + JazzCash + Easypaisa ={" "}
-                <strong>Rs. {stressTestResult.currentLiquidRupees.toLocaleString()}</strong>) against your monthly
-                essential burn rate of{" "}
-                <strong>Rs. {stressTestResult.monthlyEssentialRupees.toLocaleString()}</strong>.
-              </p>
-              <div className="runway-pills-row">
-                <span className="runway-pill">
-                  Baseline Survival Runway: <strong>{stressTestResult.baselineRunwayMonths} Months</strong>
-                </span>
-                <span className="runway-pill">
-                  Recommended 6-Mo Buffer:{" "}
-                  <strong>Rs. {stressTestResult.recommendedSafetyBufferRupees.toLocaleString()}</strong>
-                </span>
+          {/* Stress Header Banner */}
+          <div className="panel pro-card stress-test-header-card">
+            <div className="stress-resilience-badge">
+              <ShieldAlert size={32} className="stress-icon" />
+              <div>
+                <span className="caption">Liquid Safety Runway</span>
+                <strong className="resilience-score">
+                  {stressTestResult.baselineRunwayMonths} Months ({Math.round(stressTestResult.baselineRunwayMonths * 30)} Days)
+                </strong>
+                <small>Verified liquid wealth: Rs. {stressTestResult.currentLiquidRupees.toLocaleString()}</small>
               </div>
+            </div>
+            <div className="stress-score-box">
+              <span className="score-caption">Institutional Resilience Score</span>
+              <strong className={`score-digit ${stressTestResult.resilienceScore >= 70 ? "text-emerald" : "text-amber"}`}>
+                {stressTestResult.resilienceScore} / 100
+              </strong>
+              <small>Based on standard 6-month buffer recommendations</small>
             </div>
           </div>
 
-          <div className="shock-scenarios-grid">
-            {stressTestResult.scenarios.map((scenario) => (
-              <div key={scenario.id} className="panel pro-card shock-card">
-                <div className="shock-card-header">
-                  <div>
-                    <span
-                      className={`severity-tag severity-${scenario.severityLevel.toLowerCase()}`}
-                    >
-                      {scenario.severityLevel} Risk
-                    </span>
-                    <h3 className="shock-title">{scenario.title}</h3>
+          {/* 4 Shock Scenarios */}
+          <div className="stress-scenarios-grid">
+            {stressTestResult.scenarios.map((sc) => (
+              <div key={sc.id} className="panel pro-card scenario-card">
+                <div className="scenario-header">
+                  <div className="scenario-title-row">
+                    <AlertTriangle size={18} className="text-amber" />
+                    <strong>{sc.title}</strong>
                   </div>
-                  <AlertTriangle
-                    size={20}
-                    className={`severity-icon icon-${scenario.severityLevel.toLowerCase()}`}
-                  />
+                  <span className={`severity-tag severity-${sc.severityLevel.toLowerCase()}`}>
+                    {sc.severityLevel} Risk
+                  </span>
                 </div>
-
-                <p className="shock-description">{scenario.description}</p>
-
-                <div className="shock-metrics-row">
-                  <div className="shock-metric">
-                    <span>Surviving Runway</span>
-                    <strong>{scenario.liquidityRunwayDays} Days</strong>
-                    <small>({scenario.liquidityRunwayMonths} months)</small>
-                  </div>
-                  <div className="shock-metric">
-                    <span>Expense Jump</span>
-                    <strong>+{scenario.impactOnMonthlyBurnPercent}%</strong>
-                    <small>Inflation impact</small>
-                  </div>
+                <p className="scenario-desc">{sc.description}</p>
+                <div className="scenario-runway-box">
+                  <span className="runway-label">Survival Runway Under Shock:</span>
+                  <strong className="runway-val">
+                    {sc.liquidityRunwayMonths} Months ({sc.liquidityRunwayDays} Days)
+                  </strong>
                 </div>
-
-                <div className="shock-defensive-box">
-                  <strong>Defensive Playbook:</strong>
+                <div className="scenario-recs">
+                  <span className="recs-heading">Defensive Recommendations:</span>
                   <ul>
-                    {scenario.defensiveRecommendations.map((rec, idx) => (
+                    {sc.defensiveRecommendations.map((rec, idx) => (
                       <li key={idx}>
                         <ArrowRight size={12} /> {rec}
                       </li>
@@ -809,7 +1466,7 @@ export function SarmayaProSuite({ accounts, transactions }: SarmayaProSuiteProps
       )}
 
       {/* ==================================================================== */}
-      {/* TAB 4: Pakistan FIRE Independence Matrix                             */}
+      {/* TAB 7: Pakistan FIRE Independence Matrix                             */}
       {/* ==================================================================== */}
       {activeTab === "fire" && (
         <div className="pro-tab-content">

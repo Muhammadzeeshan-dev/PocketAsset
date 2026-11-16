@@ -392,6 +392,7 @@ export function PocketAssetApp({ section = "overview" }: { section?: AppSection 
           supabase={supabaseClient}
           section={section}
           onSignedOut={() => handleLogout("user_logout")}
+          onExtendSession={extendSession}
         />
       )}
 
